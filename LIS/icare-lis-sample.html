@@ -83,7 +83,7 @@
               }
               return await $http
                 .get(
-                  `../../../openmrs/ws/rest/v1/reportingrest/dataSet/${reportDimensions?.dataSetUuid}?startDate=${reportDimensions?.startDate}&endDate=${reportDimensions?.endDate}`
+                  `../../../../../openmrs/ws/rest/v1/reportingrest/dataSet/${reportDimensions?.dataSetUuid}?startDate=${reportDimensions?.startDate}&endDate=${reportDimensions?.endDate}`
                 )
                 .then((response) => {
                   return response.data;
@@ -102,10 +102,15 @@
             $scope.reportDimensions = {
               startDate: window["iReportsDimensions"]
                 ? window["iReportsDimensions"]?.startDate
-                : null,
+                : "2022-11-22",
               endDate: window["iReportsDimensions"]
                 ? window["iReportsDimensions"]?.endDate
-                : null,
+                : new Date().getFullYear().toString() +
+                  "-" +
+                  new Date().getMonth() +
+                  1 +
+                  "-" +
+                  new Date().getDate(),
               dataSetUuid: "db182518-ce09-422c-a918-9f4698e48a05",
             };
             console.log($scope.reportDimensions);
