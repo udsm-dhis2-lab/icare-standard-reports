@@ -4,14 +4,20 @@
 
 1. First ensure dependencies are installed by
 
-   `npm install`
+   ```JSONC
+   npm install
+   ```
 
 2. Set up `webpack.config.js` using the defined params on .example file.
 
 3. Use the following commands to start the app
 
-   `npm run serve`
+   ```JSONC
+   npm run serve
+   ```
 
-   Then access the app at `http://localhost:10000`
+   Then access the app at <br /> <a href="http://localhost:10000" target="_blank">`http://localhost:10000`</a>
 
-## Sample report
+## Sample reports
+
+1. Access LIS sample Report at <br /> <a href="http://localhost:10000/icare-lis-sample.html" target="_blank">Sample LIS Report</a>
