@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <style>
+      #report-app .loader-section {
+        padding: 5rem;
+        text-align: center;
+        background-color: #f2f2f2;
+        margin-top: 10px;
+        margin-bottom: 20px;
+      }
+
+      #report-app .spaced {
+        margin-top: 5rem;
+      }
+    </style>
+
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css"
+    />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"
+      integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script type="text/javascript">
+      angular
+        .module("reportModule", [])
+        .factory("FactoryDefns", function ($window, $http) {
+          var uri = "data:application/vnd.ms-excel;base64,",
+            template =
+              '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table border="1">{table}</table><br /><table border="1">{table}</table></body></html>',
+            base64 = function (s) {
+              return $window.btoa(unescape(encodeURIComponent(s)));
+            },
+            format = function (s, c) {
+              return s.replace(/{(\w+)}/g, function (m, p) {
+                return c[p];
+              });
+            };
+          return {
+            tableToExcel: function () {
+              var tables = $(
+                ".pop-table, .maternal-table, .cchp-table, .opd-table, .ipd-table, .death-table, .notifiable-table, .tracer-table"
+              );
+              var ctx = { worksheet: "Sheet 1" };
+              var str =
+                '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>';
+
+              tables.each(function (index) {
+                $(this)
+                  .find("td.hidden")
+                  .each(function (index2) {
+                    this.remove();
+                  });
+                ctx["table" + index] = this.innerHTML;
+                if (this.title == "no-border") {
+                  str += "<table>{" + "table" + index + "}</table><br />";
+                } else {
+                  str +=
+                    '<table border="1">{' + "table" + index + "}</table><br />";
+                }
+              });
+              str += "</body></html>";
+              var href = uri + base64(format(str, ctx));
+              return href;
+            },
+            getData: async function (period, dataSetUuid) {
+              if (!period && !dataSetUuid) {
+                return null;
+              }
+              return await $http
+                .get(
+                  `../../../openmrs/ws/rest/v1/reportingrest/dataSet/${dataSetUuid}?startDate=${period?.startDate}&endDate=${period?.endDate}`
+                )
+                .then((response) => {
+                  return response.data;
+                });
+            },
+          };
+        })
+        .controller("reportController", [
+          "$scope",
+          "$http",
+          "$timeout",
+          "$q",
+          "FactoryDefns",
+          function ($scope, $http, $timeout, $q, FactoryDefns) {
+            $scope.currentUser = null;
+            $scope.dataSetUuid = "734cc9d2-370f-4234-be3c-1cda7f538666";
+            $scope.reportData = [];
+            $scope.reportDimensions = {
+              periods: window["iReportsDimensions"]
+                ? window["iReportsDimensions"]?.periods
+                : [
+                    {
+                      id: "202301",
+                      name: "January 2023",
+                      startDate: "2023-01-01",
+                      endDate: "2023-01-31",
+                    },
+                    {
+                      id: "202212",
+                      name: "December 2022",
+                      startDate: "2022-12-01",
+                      endDate: "2022-12-31",
+                    },
+                    {
+                      id: "202211",
+                      name: "November 2022",
+                      startDate: "2022-11-01",
+                      endDate: "2022-11-30",
+                    },
+                  ],
+              data: null,
+            };
+            $scope.dataKeys = [
+              "ME_Umri_Chini_Ya_Mwaka_1",
+              "KE_Umri_Chini_Ya_Mwaka_1",
+              "ME_Umri_Mwaka_1_Hadi_4",
+              "KE_Umri_Mwaka_1_Hadi_4",
+              "ME_Umri_Mwaka_5_Hadi_9",
+              "KE_Umri_Mwaka_5_Hadi_9",
+              "ME_Umri_Mwaka_10_Hadi_14",
+              "KE_Umri_Mwaka_10_Hadi_14",
+              "ME_Umri_Mwaka_15_Hadi_19",
+              "KE_Umri_Mwaka_15_Hadi_19",
+              "ME_Umri_Mwaka_20_Hadi_24",
+              "KE_Umri_Mwaka_20_Hadi_24",
+              "ME_Umri_Mwaka_25_Hadi_49",
+              "KE_Umri_Mwaka_25_Hadi_49",
+              "ME_Umri_Miaka_Juu_Ya_50",
+              "KE_Umri_Miaka_Juu_Ya_50",
+            ];
+            for (const period of $scope.reportDimensions?.periods) {
+              FactoryDefns.getData(period, $scope.dataSetUuid).then(
+                (response) => {
+                  // console.log("response" + period.id, response);
+                  const data = {
+                    period: period,
+                    periodId: period.id,
+                    dataValues: _.keyBy(
+                      Object.keys(response?.rows[0]).map((key) => {
+                        return {
+                          key: key + "-" + period?.id,
+                          value: response?.rows[0][key],
+                        };
+                      }),
+                      "key"
+                    ),
+                  };
+                  $scope.reportData = _.orderBy(
+                    [...$scope.reportData, data],
+                    ["periodId"],
+                    ["desc"]
+                  );
+                  // console.log($scope.reportData);
+                  $scope.$apply();
+                }
+              );
+            }
+          },
+        ]);
+    </script>
+  </head>
+  <body>
+    <div id="report-app" ng-app="reportModule" ng-controller="reportController">
+      <h3 class="text-center">HIV Testing & Counselling</h3>
+      <div>
+        <table class="table table-bordered spaced">
+          <thead>
+            <tr>
+              <th rowspan="3">Mwezi</th>
+              <th colspan="16" class="text-center">Umri kwa Makundi (Miaka)</th>
+              <th colspan="2">Jumla</th>
+            </tr>
+            <tr>
+              <th colspan="2">< 1</th>
+              <th colspan="2">1 - 4</th>
+              <th colspan="2">5 - 9</th>
+              <th colspan="2">10 - 14</th>
+              <th colspan="2">15 - 19</th>
+              <th colspan="2">20 - 24</th>
+              <th colspan="2">25 - 49</th>
+              <th colspan="2">> 50</th>
+            </tr>
+            <tr>
+              <th>Me</th>
+              <th>Ke</th>
+              <th>Me</th>
+              <th>Ke</th>
+              <th>Me</th>
+              <th>Ke</th>
+              <th>Me</th>
+              <th>Ke</th>
+              <th>Me</th>
+              <th>Ke</th>
+              <th>Me</th>
+              <th>Ke</th>
+              <th>Me</th>
+              <th>Ke</th>
+              <th>Me</th>
+              <th>Ke</th>
+              <th>Me</th>
+              <th>Ke</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="dataRow in reportData">
+              <td>{{ dataRow.period.name}}</td>
+              <td ng-repeat="dataKey in dataKeys">
+                {{dataRow.dataValues[dataKey + "-" + dataRow.period.id].value}}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
