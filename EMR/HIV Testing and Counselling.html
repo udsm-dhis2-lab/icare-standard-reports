@@ -13,6 +13,48 @@
       #report-app .spaced {
         margin-top: 5rem;
       }
+      #report-app .report-table th,
+      #report-app .report-table td {
+        text-align: center;
+      }
+
+      #report-app .report-header {
+        font-weight: 600;
+        color: #222c;
+      }
+
+      #report-app thead {
+        background-color: #e2e2e252;
+      }
+
+      #report-app .loader {
+        border: 16px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 16px solid #3498db;
+        width: 120px;
+        height: 120px;
+        -webkit-animation: spin 2s linear infinite; /* Safari */
+        animation: spin 2s linear infinite;
+      }
+
+      /* Safari */
+      @-webkit-keyframes spin {
+        0% {
+          -webkit-transform: rotate(0deg);
+        }
+        100% {
+          -webkit-transform: rotate(360deg);
+        }
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
     </style>
 
     <link
@@ -100,6 +142,7 @@
           function ($scope, $http, $timeout, $q, FactoryDefns) {
             $scope.currentUser = null;
             $scope.dataSetUuid = "734cc9d2-370f-4234-be3c-1cda7f538666";
+            $scope.loading = true;
             $scope.reportData = [];
             $scope.reportDimensions = {
               periods: window["iReportsDimensions"]
@@ -124,7 +167,7 @@
                       endDate: "2022-11-30",
                     },
                   ],
-              data: null,
+              allData: {},
             };
             $scope.dataKeys = [
               "ME_Umri_Chini_Ya_Mwaka_1",
@@ -145,6 +188,7 @@
               "KE_Umri_Miaka_Juu_Ya_50",
             ];
             for (const period of $scope.reportDimensions?.periods) {
+              $scope.loading = true;
               FactoryDefns.getData(period, $scope.dataSetUuid).then(
                 (response) => {
                   // console.log("response" + period.id, response);
@@ -160,31 +204,104 @@
                       }),
                       "key"
                     ),
+                    meRowTotal: $scope.calculateTotal(
+                      Object.keys(response?.rows[0]).map((key) => {
+                        return key.toLowerCase().indexOf("me_") > -1
+                          ? response?.rows[0][key]
+                          : 0;
+                      })
+                    ),
+                    keRowTotal: $scope.calculateTotal(
+                      Object.keys(response?.rows[0]).map((key) => {
+                        return key.toLowerCase().indexOf("ke_") > -1
+                          ? response?.rows[0][key]
+                          : 0;
+                      })
+                    ),
+                    overallRowTotal: $scope.calculateTotal(
+                      Object.keys(response?.rows[0]).map((key) => {
+                        return key.toLowerCase().indexOf("me_") > -1 ||
+                          key.toLowerCase().indexOf("ke_") > -1
+                          ? response?.rows[0][key]
+                          : 0;
+                      })
+                    ),
+                  };
+                  $scope.reportDimensions.allData = {
+                    ...$scope.reportDimensions.allData,
+                    ..._.keyBy(
+                      Object.keys(response?.rows[0]).map((key) => {
+                        return {
+                          key: key + "-" + period?.id,
+                          value: response?.rows[0][key],
+                        };
+                      }),
+                      "key"
+                    ),
                   };
                   $scope.reportData = _.orderBy(
                     [...$scope.reportData, data],
                     ["periodId"],
                     ["desc"]
                   );
-                  // console.log($scope.reportData);
+                  $scope.loading = false;
                   $scope.$apply();
                 }
               );
             }
+
+            $scope.calculateTotal = function (dataToSum) {
+              let total = 0;
+              dataToSum?.forEach((data) => {
+                total += data;
+              });
+              return total;
+            };
+
+            $scope.calculateTotalBySpecificDataKey = function (key, allData) {
+              let total = 0;
+
+              $scope.reportDimensions.periods.forEach((period) => {
+                total += allData[key + "-" + period.id]?.value;
+              });
+              return total;
+            };
+
+            $scope.calculateTheOverallTotal = function (
+              keyContent1,
+              keyContent2,
+              allData
+            ) {
+              let total = 0;
+              $scope.reportDimensions.periods.forEach((period) => {
+                Object.keys(allData).forEach((key) => {
+                  total +=
+                    (keyContent1 &&
+                      key?.toLowerCase()?.indexOf(keyContent1) > -1 &&
+                      key?.indexOf(period?.id) > -1) ||
+                    (keyContent2 &&
+                      key?.toLowerCase()?.indexOf(keyContent2) > -1 &&
+                      key?.indexOf(period?.id) > -1)
+                      ? allData[key]?.value
+                      : 0;
+                });
+              });
+              return total;
+            };
           },
         ]);
     </script>
   </head>
   <body>
     <div id="report-app" ng-app="reportModule" ng-controller="reportController">
-      <h3 class="text-center">HIV Testing & Counselling</h3>
+      <h2 class="text-center report-header">HIV Testing & Counselling</h2>
       <div>
-        <table class="table table-bordered spaced">
+        <table class="table table-bordered spaced report-table">
           <thead>
             <tr>
-              <th rowspan="3">Mwezi</th>
+              <th rowspan="3" style="text-align: left">Kipindi (Muda)</th>
               <th colspan="16" class="text-center">Umri kwa Makundi (Miaka)</th>
-              <th colspan="2">Jumla</th>
+              <th colspan="3" rowspan="2">Jumla</th>
             </tr>
             <tr>
               <th colspan="2">< 1</th>
@@ -215,13 +332,49 @@
               <th>Ke</th>
               <th>Me</th>
               <th>Ke</th>
+              <th>Me + Ke</th>
             </tr>
           </thead>
           <tbody>
             <tr ng-repeat="dataRow in reportData">
-              <td>{{ dataRow.period.name}}</td>
+              <td style="text-align: left">{{ dataRow.period.name}}</td>
               <td ng-repeat="dataKey in dataKeys">
                 {{dataRow.dataValues[dataKey + "-" + dataRow.period.id].value}}
+              </td>
+              <td>{{ dataRow.meRowTotal}}</td>
+              <td>{{ dataRow.keRowTotal}}</td>
+              <td>{{ dataRow.overallRowTotal}}</td>
+            </tr>
+            <tr ng-if="!loading">
+              <td>Jumla</td>
+              <td ng-repeat="dataKey in dataKeys">
+                {{calculateTotalBySpecificDataKey(dataKey,reportDimensions.allData)}}
+              </td>
+              <td>
+                {{ calculateTheOverallTotal('me_',
+                null,reportDimensions.allData)}}
+              </td>
+              <td>
+                {{ calculateTheOverallTotal('ke_',
+                null,reportDimensions.allData)}}
+              </td>
+              <td>
+                {{ calculateTheOverallTotal('me_',
+                'ke_',reportDimensions.allData)}}
+              </td>
+            </tr>
+            <tr ng-if="loading">
+              <td colspan="100%">
+                <div
+                  style="
+                    width: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                >
+                  <div class="loader"></div>
+                </div>
               </td>
             </tr>
           </tbody>
