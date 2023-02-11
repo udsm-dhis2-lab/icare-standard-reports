@@ -145,28 +145,30 @@
             $scope.loading = true;
             $scope.reportData = [];
             $scope.reportDimensions = {
-              periods: window["iReportsDimensions"]
-                ? window["iReportsDimensions"]?.periods
-                : [
-                    {
-                      id: "202301",
-                      name: "January 2023",
-                      startDate: "2023-01-01",
-                      endDate: "2023-01-31",
-                    },
-                    {
-                      id: "202212",
-                      name: "December 2022",
-                      startDate: "2022-12-01",
-                      endDate: "2022-12-31",
-                    },
-                    {
-                      id: "202211",
-                      name: "November 2022",
-                      startDate: "2022-11-01",
-                      endDate: "2022-11-30",
-                    },
-                  ],
+              periods:
+                window["iReportsDimensions"] &&
+                window["iReportsDimensions"]?.periods
+                  ? window["iReportsDimensions"]?.periods
+                  : [
+                      {
+                        id: "202301",
+                        name: "January 2023",
+                        startDate: "2023-01-01",
+                        endDate: "2023-01-31",
+                      },
+                      {
+                        id: "202212",
+                        name: "December 2022",
+                        startDate: "2022-12-01",
+                        endDate: "2022-12-31",
+                      },
+                      {
+                        id: "202211",
+                        name: "November 2022",
+                        startDate: "2022-11-01",
+                        endDate: "2022-11-30",
+                      },
+                    ],
               allData: {},
             };
             $scope.dataKeys = [

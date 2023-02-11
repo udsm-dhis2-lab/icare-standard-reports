@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <style>
+      #report-app .loader-section {
+        padding: 5rem;
+        text-align: center;
+        background-color: #f2f2f2;
+        margin-top: 10px;
+        margin-bottom: 20px;
+      }
+
+      #report-app .spaced {
+        margin-top: 5rem;
+      }
+      #report-app table {
+        border-collapse: collapse;
+      }
+      #report-app table,
+      #report-app th,
+      #report-app td {
+        border: 1px solid #c0c0c0;
+      }
+      #report-app th {
+        text-align: center;
+      }
+      #report-app td,
+      #report-app th {
+        height: 25px;
+        padding: 6px;
+        margin: 10px;
+      }
+
+      #report-app .loader {
+        border: 16px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 16px solid #3498db;
+        width: 120px;
+        height: 120px;
+        -webkit-animation: spin 2s linear infinite; /* Safari */
+        animation: spin 2s linear infinite;
+      }
+
+      /* Safari */
+      @-webkit-keyframes spin {
+        0% {
+          -webkit-transform: rotate(0deg);
+        }
+        100% {
+          -webkit-transform: rotate(360deg);
+        }
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css"
+    />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"
+      integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script type="text/javascript">
+      angular
+        .module("reportModule", [])
+        .factory("FactoryDefns", function ($window, $http) {
+          var uri = "data:application/vnd.ms-excel;base64,",
+            template =
+              '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table border="1">{table}</table><br /><table border="1">{table}</table></body></html>',
+            base64 = function (s) {
+              return $window.btoa(unescape(encodeURIComponent(s)));
+            },
+            format = function (s, c) {
+              return s.replace(/{(\w+)}/g, function (m, p) {
+                return c[p];
+              });
+            };
+          return {
+            tableToExcel: function () {
+              var tables = $(
+                ".pop-table, .maternal-table, .cchp-table, .opd-table, .ipd-table, .death-table, .notifiable-table, .tracer-table"
+              );
+              var ctx = { worksheet: "Sheet 1" };
+              var str =
+                '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>';
+
+              tables.each(function (index) {
+                $(this)
+                  .find("td.hidden")
+                  .each(function (index2) {
+                    this.remove();
+                  });
+                ctx["table" + index] = this.innerHTML;
+                if (this.title == "no-border") {
+                  str += "<table>{" + "table" + index + "}</table><br />";
+                } else {
+                  str +=
+                    '<table border="1">{' + "table" + index + "}</table><br />";
+                }
+              });
+              str += "</body></html>";
+              var href = uri + base64(format(str, ctx));
+              return href;
+            },
+            getData: async function (reportDimensions) {
+              if (!reportDimensions) {
+                return null;
+              }
+              return await $http
+                .get(
+                  `../../../openmrs/ws/rest/v1/reportingrest/dataSet/${reportDimensions?.dataSetUuid}?startDate=${reportDimensions?.startDate}&endDate=${reportDimensions?.endDate}`
+                )
+                .then((response) => {
+                  return response.data;
+                });
+            },
+          };
+        })
+        .controller("reportController", [
+          "$scope",
+          "$http",
+          "$timeout",
+          "$q",
+          "FactoryDefns",
+          function ($scope, $http, $timeout, $q, FactoryDefns) {
+            $scope.currentUser = null;
+            $scope.loading = false;
+            $scope.testsHeaders = [];
+            $scope.reportDimensions = {
+              startDate: window["iReportsDimensions"]
+                ? window["iReportsDimensions"]?.startDate
+                : "2022-11-22",
+              endDate: window["iReportsDimensions"]
+                ? window["iReportsDimensions"]?.endDate
+                : new Date().getFullYear().toString() +
+                  "-" +
+                  new Date().getMonth() +
+                  1 +
+                  "-" +
+                  new Date().getDate(),
+              dataSetUuid: "887ba6b9-dff5-44aa-8641-c326403fc516",
+            };
+            $scope.dataRows = [];
+            $scope.maxTests = 1;
+            $scope;
+            // console.log($scope.reportDimensions);
+            $scope.loading = true;
+            FactoryDefns.getData($scope.reportDimensions).then((response) => {
+              const groupedRows = _.groupBy(response?.rows, "lab_no");
+              //   console.log(groupedRows);
+              Object.keys(groupedRows).map((key) => {
+                // Set max test
+                if ($scope.maxTests < groupedRows[key].length) {
+                  $scope.maxTests = groupedRows[key].length;
+                }
+                const data = groupedRows[key][0];
+                $scope.dataRows = [
+                  ...$scope.dataRows,
+                  {
+                    ...data,
+                    accession_date: data.accession_date.split(" ")[0],
+                    accession_time: data.accession_date.split(" ")[1],
+                    tests: _.flatten(
+                      groupedRows[key].map((test) => {
+                        return [
+                          {
+                            ...test,
+                            discipline: test.discipline,
+                          },
+                          {
+                            ...test,
+                            discipline: test.discipline,
+                          },
+                        ];
+                      })
+                    ),
+                  },
+                ];
+              });
+
+              for (let count = 0; count < $scope.maxTests; count++) {
+                $scope.testsHeaders = [
+                  ...$scope.testsHeaders,
+                  {
+                    count,
+                    name: "Discpl " + (count + 1),
+                    key: "discipline",
+                  },
+                  {
+                    count,
+                    name: "Test " + (count + 1),
+                    key: "test",
+                  },
+                ];
+              }
+
+              $scope.loading = false;
+              $scope.$apply();
+            });
+          },
+        ]);
+    </script>
+  </head>
+  <body>
+    <div id="report-app" ng-app="reportModule" ng-controller="reportController">
+      <h3 class="text-center">All Patients Accessions</h3>
+      <div style="width: 100%; overflow: auto; margin-top: 16px">
+        <table class="table table-bordered" ng-if="!loading">
+          <thead style="background-color: #2e8180; color: #fff">
+            <tr>
+              <th rowspan="2">SN</th>
+              <th colspan="7">Codes for</th>
+              <th colspan="7">Accession Details</th>
+              <th colspan="6">Names for</th>
+              <th colspan="4">Patient Details</th>
+              <th colspan="5">Billing Details</th>
+              <th colspan="10">Sample</th>
+              <th>Clinical</th>
+              <th colspan="{{maxTests*2}}">Tests</th>
+            </tr>
+            <tr>
+              <th>Zone</th>
+              <th>Region</th>
+              <th>District</th>
+              <th>HFac</th>
+              <th>Wrd/Clin</th>
+              <th>Clin Trial</th>
+              <th>Visit #</th>
+              <th>Accessn Date</th>
+              <th>Accessn Time</th>
+              <th>Accessn By</th>
+              <th>LabNo</th>
+              <th>Ref'd From</th>
+              <th>Priority</th>
+              <th>AccssnType</th>
+              <th>Zone</th>
+              <th>Region</th>
+              <th>District</th>
+              <th>Health Facility</th>
+              <th>Ward/Clinic</th>
+              <th>Clinical Trial</th>
+              <th>Age</th>
+              <th>Age (Days)</th>
+              <th>BirthDate</th>
+              <th>Sex</th>
+              <th>Account No</th>
+              <th>Receipt No</th>
+              <th>Payment No</th>
+              <th>Medical Insurer</th>
+              <th>Dep No</th>
+              <th>DateOfCapt</th>
+              <th>TimeOfCapt</th>
+              <th>PhlebCode</th>
+              <th>Phlebotomist</th>
+              <th>CollctDate</th>
+              <th>CollctTime</th>
+              <th>RcvdDate</th>
+              <th>RcvdTime</th>
+              <th>RcvdLabBy</th>
+              <th>Storage Number(s)</th>
+              <th>ICD10</th>
+              <th ng-repeat="testsHeader in testsHeaders">
+                {{testsHeader.name}}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="dataRow in dataRows;">
+              <td>{{$index+1}}</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>{{dataRow.accession_date}}</td>
+              <td>{{dataRow.accession_time}}</td>
+              <td>{{dataRow.accessed_by}}</td>
+              <td>{{dataRow.lab_no}}</td>
+              <td></td>
+              <td>{{dataRow.priority}}</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>{{dataRow.age}}</td>
+              <td></td>
+              <td></td>
+              <td>{{dataRow.gender}}</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>{{dataRow.icd_10}}</td>
+              <td ng-repeat="testsHeader in testsHeaders;">
+                <!-- {{$index}} -->
+                {{dataRow.tests[$index][testsHeader.key]}}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div
+          ng-if="loading"
+          style="
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "
+        >
+          <div class="loader"></div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
