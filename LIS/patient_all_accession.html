@@ -163,8 +163,6 @@
             };
             $scope.dataRows = [];
             $scope.maxTests = 1;
-            $scope;
-            // console.log($scope.reportDimensions);
             $scope.loading = true;
             FactoryDefns.getData($scope.reportDimensions).then((response) => {
               const groupedRows = _.groupBy(response?.rows, "lab_no");
