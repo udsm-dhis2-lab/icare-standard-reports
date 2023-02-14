@@ -29,7 +29,6 @@
         height: 25px;
         padding: 6px;
         margin: 10px;
-        vertical-align: initial;
       }
 
       #report-app .loader {
@@ -97,9 +96,9 @@
 
       #report-app .wrapper .list {
         display: none;
-        height: 300px;
+        height: 320px;
         width: 400px;
-        overflow-y: auto;
+        overflow-y: hidden;
         overflow-x: hidden;
         border-left: solid 1px #c7c6c7;
         border-right: solid 1px #c7c6c7;
@@ -112,6 +111,8 @@
         width: 100%;
         padding: 0;
         margin: 0;
+        height: 215px;
+        overflow: auto;
       }
       #report-app .list .items-list li {
         margin: 0;
@@ -125,6 +126,21 @@
       #report-app .selections-multiple-lis {
         background-color: #fff;
         z-index: 21;
+      }
+      #report-app .search-input {
+        border-radius: 4px;
+        border: solid 1px #222;
+        padding: 6px;
+      }
+      #report-app .period-select {
+        padding: 6px 8px;
+        border-radius: 3px;
+        border: none;
+      }
+      #report-app .period-year-change-btn {
+        border: none;
+        border-radius: 4px;
+        padding: 6px 8px;
       }
     </style>
 
@@ -222,13 +238,111 @@
           "$q",
           "FactoryDefns",
           function ($scope, $http, $timeout, $q, FactoryDefns) {
+            $scope.generatePeriods = (year, type) => {
+              if (type === "yearly") {
+                $scope.periods = [];
+                for (let count = 0; count < 10; count++) {
+                  $scope.periods = [
+                    ...$scope.periods,
+                    {
+                      id: year - count,
+                      name: year - count,
+                      startDate: year - count + "-01-01",
+                      endDate: year - count + "-12-31",
+                    },
+                  ];
+                }
+              } else {
+                $scope.periods = [];
+                $scope.periods = [
+                  ...$scope.periods,
+                  {
+                    id: "JAN",
+                    name: "JAN " + year,
+                    startDate: year + "-01-01",
+                    endDate: year + "-01-31",
+                  },
+                  {
+                    id: "FEB",
+                    name: "FEB " + year,
+                    startDate: year + "-02-01",
+                    endDate: year + "-02-" + (year % 4 == 0 ? "29" : "28"),
+                  },
+                  {
+                    id: "MAR",
+                    name: "MAR " + year,
+                    startDate: year + "-03-01",
+                    endDate: year + "-03-30",
+                  },
+                  {
+                    id: "APRIL",
+                    name: "APRIL " + year,
+                    startDate: year + "-04-01",
+                    endDate: year + "-04-30",
+                  },
+                  {
+                    id: "MAY",
+                    name: "MAY " + year,
+                    startDate: year + "-05-01",
+                    endDate: year + "-05-31",
+                  },
+                  {
+                    id: "JUNE",
+                    name: "JUNE " + year,
+                    startDate: year + "-06-01",
+                    endDate: year + "-06-30",
+                  },
+                  {
+                    id: "JULY",
+                    name: "JULY " + year,
+                    startDate: year + "-07-01",
+                    endDate: year + "-07-31",
+                  },
+                  {
+                    id: "AUG",
+                    name: "AUG " + year,
+                    startDate: year + "-08-01",
+                    endDate: year + "-08-31",
+                  },
+                  {
+                    id: "SEPT",
+                    name: "SEPT " + year,
+                    startDate: year + "-09-01",
+                    endDate: year + "-09-30",
+                  },
+                  {
+                    id: "OCT",
+                    name: "OCT " + year,
+                    startDate: year + "-10-01",
+                    endDate: year + "-10-31",
+                  },
+                  {
+                    id: "NOV",
+                    name: "NOV " + year,
+                    startDate: year + "-11-01",
+                    endDate: year + "-11-30",
+                  },
+                  {
+                    id: "DEC",
+                    name: "DEC " + year,
+                    startDate: year + "-12-01",
+                    endDate: year + "-12-31",
+                  },
+                ];
+              }
+            };
+
             $scope.currentUser = null;
             $scope.loading = false;
             $scope.analysisType = "by-year";
             $scope.analysisCategory = "all";
             $scope.searchingText = null;
             $scope.reportHeaders = [];
+            $scope.currentYear = new Date().getFullYear();
+            $scope.selectedYear = $scope.currentYear;
+            $scope.generatePeriods($scope.selectedYear, "yearly");
             $scope.message = "";
+            $scope.selectedPeriod = null;
             $scope.reportDimensions = {
               startDate: window["iReportsDimensions"]
                 ? window["iReportsDimensions"]?.startDate
@@ -268,6 +382,10 @@
             $scope.onSetReportType = function (type) {
               $scope.analysisType = type;
               $scope.loadData($scope.reportDimensions);
+              $scope.generatePeriods(
+                $scope.selectedYear,
+                $scope.analysisType === "by-year" ? "yearly" : "monthly"
+              );
             };
 
             $scope.onSetReportCategory = (category) => {
@@ -451,32 +569,43 @@
                   },
                 ];
               }
-              $scope.loading = true;
-              for (const selectedTest of $scope.selectedItems) {
-                if (
-                  $scope.dataSetsReference[$scope.analysisType][
-                    $scope.analysisCategory
-                  ].uuid
-                ) {
-                  this.message = null;
-                  FactoryDefns.getData(
-                    $scope.reportDimensions,
+              if (
+                $scope.analysisCategory &&
+                $scope.analysisType &&
+                $scope.selectedItems.length > 0 &&
+                $scope.selectedPeriod
+              ) {
+                $scope.loading = true;
+                for (const selectedTest of $scope.selectedItems) {
+                  if (
                     $scope.dataSetsReference[$scope.analysisType][
                       $scope.analysisCategory
-                    ].uuid,
-                    selectedTest.uuid
-                  ).then((response) => {
-                    $scope.dataRowsByTest[selectedTest?.uuid] = {
-                      ...selectedTest,
-                      dataRow: response?.rows[0],
-                    };
+                    ].uuid
+                  ) {
+                    this.message = null;
+                    FactoryDefns.getData(
+                      {
+                        ...$scope.reportDimensions,
+                        startDate: $scope.selectedPeriod?.startDate,
+                        endDate: $scope.selectedPeriod?.endDate,
+                      },
+                      $scope.dataSetsReference[$scope.analysisType][
+                        $scope.analysisCategory
+                      ].uuid,
+                      selectedTest.uuid
+                    ).then((response) => {
+                      $scope.dataRowsByTest[selectedTest?.uuid] = {
+                        ...selectedTest,
+                        dataRow: response?.rows[0],
+                      };
+                      $scope.loading = false;
+                      $scope.$apply();
+                    });
+                  } else {
+                    $scope.dataRowsByTest = {};
                     $scope.loading = false;
-                    $scope.$apply();
-                  });
-                } else {
-                  $scope.dataRowsByTest = {};
-                  $scope.loading = false;
-                  $scope.message = "Not supported";
+                    $scope.message = "Not supported";
+                  }
                 }
               }
             };
@@ -509,6 +638,31 @@
               $scope.showMultipleSelection = !$scope.showMultipleSelection;
             };
 
+            $scope.updateTestOrders = () => {
+              $scope.showMultipleSelection = false;
+              $scope.loadData($scope.reportDimensions);
+            };
+
+            $scope.onSearchTestOrders = (event) => {
+              $scope.searchingText = event.target.value;
+              $scope.getTestOrders();
+            };
+
+            $scope.getSelectedPeriod = (event) => {
+              $scope.loadData($scope.reportDimensions);
+            };
+
+            $scope.onChangeYear = (selectedYear, action) => {
+              $scope.selectedYear =
+                action == "prev" ? selectedYear - 1 : selectedYear + 1;
+              console.log($scope.selectedYear);
+              $scope.generatePeriods(
+                $scope.selectedYear,
+                $scope.analysisType === "by-year" ? "yearly" : "monthly"
+              );
+              console.log($scope.periods);
+            };
+
             $scope.getTestOrders = () => {
               FactoryDefns.getTestOrders($scope.searchingText).then(
                 (response) => {
@@ -537,7 +691,7 @@
             class="selected-items-box"
             ng-click="toggleMultipleSelection($event)"
           >
-            <span> Select Test Orders</span>
+            <span> Test Orders</span>
             <span>
               <img
                 height="10"
@@ -551,9 +705,27 @@
             class="list"
             ng-style="{'display': showMultipleSelection ? 'block': 'none'}"
           >
+            <div
+              ng-if="!testOrders"
+              style="
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <div class="loader"></div>
+            </div>
             <table class="table">
               <tr>
-                <td colspan="2"></td>
+                <td colspan="2">
+                  <input
+                    class="search-input"
+                    placeholder="Search from all test orders"
+                    style="width: 100%"
+                    ng-keyup="onSearchTestOrders($event)"
+                  />
+                </td>
               </tr>
               <tr>
                 <td style="width: 50%">
@@ -575,6 +747,18 @@
                       <span>{{item.display}}</span>
                     </li>
                   </ul>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <button
+                    class="btn"
+                    style="float: right"
+                    ng-disabled="selectedItems.length ==0"
+                    ng-click="updateTestOrders()"
+                  >
+                    Update
+                  </button>
                 </td>
               </tr>
             </table>
@@ -645,13 +829,33 @@
         >
           Not Resulted
         </button>
+        <button
+          style="margin-left: 24px"
+          ng-click="onChangeYear(selectedYear, 'prev')"
+          class="period-year-change-btn"
+        >
+          Prev
+        </button>
+        <select
+          class="period-select"
+          ng-options="item as item.name for item in periods track by item.id"
+          ng-model="selectedPeriod"
+          ng-change="getSelectedPeriod($event)"
+        ></select>
+        <button
+          ng-click="onChangeYear(selectedYear, 'next')"
+          class="period-year-change-btn"
+          ng-disabled="selectedYear == currentYear"
+        >
+          Next
+        </button>
       </div>
 
       <div style="width: 100%; overflow: auto; margin-top: 16px">
-        <table class="table table-bordered" ng-if="!loading">
+        <table class="table table-bordered" ng-if="!loading && selectedPeriod">
           <thead style="background-color: #2e8180; color: #fff">
             <tr>
-              <th>SN</th>
+              <th style="width: 20px">SN</th>
               <th>Test</th>
               <th ng-repeat="header in reportHeaders">{{header.name}}</th>
             </tr>
@@ -668,7 +872,7 @@
         </table>
         <div style="width: 100%">{{message}}</div>
         <div
-          ng-if="loading"
+          ng-if="loading && selectedPeriod"
           style="
             width: 100%;
             display: flex;
