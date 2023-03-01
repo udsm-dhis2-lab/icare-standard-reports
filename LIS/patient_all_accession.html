@@ -159,7 +159,7 @@
                   1 +
                   "-" +
                   new Date().getDate(),
-              dataSetUuid: "887ba6b9-dff5-44aa-8641-c326403fc516",
+              dataSetUuid: "6f47ebbe-0e32-4dc5-9939-3eff52d4195b",
             };
             $scope.dataRows = [];
             $scope.maxTests = 1;
@@ -177,18 +177,26 @@
                   ...$scope.dataRows,
                   {
                     ...data,
-                    accession_date: data.accession_date.split(" ")[0],
-                    accession_time: data.accession_date.split(" ")[1],
+                    transport_condition: data.transport_condition
+                      ? data.transport_condition.replace(
+                          "SAMPLE_TRANSPORT_CONDITION:",
+                          ""
+                        )
+                      : "",
+                    transport_temperature: data.transport_temperature
+                      ? data.transport_temperature.replace(
+                          "SAMPLE_TRANSPORT_TEMPERATURE:",
+                          ""
+                        )
+                      : "",
                     tests: _.flatten(
                       groupedRows[key].map((test) => {
                         return [
                           {
                             ...test,
-                            discipline: test.discipline,
-                          },
-                          {
-                            ...test,
-                            discipline: test.discipline,
+                            test: test.test
+                              ? test.test.replace("TEST_ORDERS:", "")
+                              : "",
                           },
                         ];
                       })
@@ -200,11 +208,6 @@
               for (let count = 0; count < $scope.maxTests; count++) {
                 $scope.testsHeaders = [
                   ...$scope.testsHeaders,
-                  {
-                    count,
-                    name: "Discpl " + (count + 1),
-                    key: "discipline",
-                  },
                   {
                     count,
                     name: "Test " + (count + 1),
@@ -227,58 +230,31 @@
         <table class="table table-bordered" ng-if="!loading">
           <thead style="background-color: #2e8180; color: #fff">
             <tr>
-              <th rowspan="2">SN</th>
-              <th colspan="7">Codes for</th>
-              <th colspan="7">Accession Details</th>
-              <th colspan="6">Names for</th>
-              <th colspan="4">Patient Details</th>
-              <th colspan="5">Billing Details</th>
-              <th colspan="10">Sample</th>
-              <th>Clinical</th>
-              <th colspan="{{maxTests*2}}">Tests</th>
-            </tr>
-            <tr>
-              <th>Zone</th>
-              <th>Region</th>
-              <th>District</th>
-              <th>HFac</th>
-              <th>Wrd/Clin</th>
-              <th>Clin Trial</th>
-              <th>Visit #</th>
-              <th>Accessn Date</th>
-              <th>Accessn Time</th>
-              <th>Accessn By</th>
-              <th>LabNo</th>
-              <th>Ref'd From</th>
+              <th>SN</th>
+              <th>Lab No</th>
+              <th>Reg Date</th>
+              <th>File No</th>
               <th>Priority</th>
-              <th>AccssnType</th>
-              <th>Zone</th>
-              <th>Region</th>
-              <th>District</th>
               <th>Health Facility</th>
-              <th>Ward/Clinic</th>
-              <th>Clinical Trial</th>
-              <th>Age</th>
+              <th>Address</th>
+              <th>Age (Years)</th>
               <th>Age (Days)</th>
               <th>BirthDate</th>
               <th>Sex</th>
-              <th>Account No</th>
-              <th>Receipt No</th>
-              <th>Payment No</th>
-              <th>Medical Insurer</th>
-              <th>Dep No</th>
-              <th>DateOfCapt</th>
-              <th>TimeOfCapt</th>
-              <th>PhlebCode</th>
-              <th>Phlebotomist</th>
-              <th>CollctDate</th>
-              <th>CollctTime</th>
-              <th>RcvdDate</th>
-              <th>RcvdTime</th>
-              <th>RcvdLabBy</th>
-              <th>Storage Number(s)</th>
-              <th>ICD10</th>
-              <th ng-repeat="testsHeader in testsHeaders">
+              <th>Collected On</th>
+              <th>Collected By</th>
+              <th>Received On</th>
+              <th>Received By</th>
+              <th>Delivered On</th>
+              <th>Delivered By</th>
+              <th>Specimen Condition</th>
+              <th>Transport Condition</th>
+              <th>Transport Temperature</th>
+              <th>IDC 10</th>
+              <th>Refering Doctor</th>
+              <th>Refering Doctor Email</th>
+              <th>Refering Doctor Phone</th>
+              <th ng-repeat="testsHeader in testsHeaders;">
                 {{testsHeader.name}}
               </th>
             </tr>
@@ -286,48 +262,30 @@
           <tbody>
             <tr ng-repeat="dataRow in dataRows;">
               <td>{{$index+1}}</td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td>{{dataRow.accession_date}}</td>
-              <td>{{dataRow.accession_time}}</td>
-              <td>{{dataRow.accessed_by}}</td>
               <td>{{dataRow.lab_no}}</td>
-              <td></td>
+              <td>{{dataRow.reg_date}}</td>
+              <td>{{dataRow.file_no}}</td>
               <td>{{dataRow.priority}}</td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td>{{dataRow.age}}</td>
-              <td></td>
-              <td></td>
+              <td>{{dataRow.health_facility}}</td>
+              <td>{{dataRow.address}}</td>
+              <td>{{dataRow.age_years}}</td>
+              <td>{{dataRow.age_days}}</td>
+              <td>{{dataRow.date_of_birth}}</td>
               <td>{{dataRow.gender}}</td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
+              <td>{{dataRow.collected_on | date:"medium"}}</td>
+              <td>{{dataRow.collected_by}}</td>
+              <td>{{dataRow.received_on | date:"medium"}}</td>
+              <td>{{dataRow.received_by}}</td>
+              <td>{{dataRow.delivered_on | date:"medium"}}</td>
+              <td>{{dataRow.delivered_by}}</td>
+              <td>{{dataRow.specimen_condition}}</td>
+              <td>{{dataRow.transport_condition}}</td>
+              <td>{{dataRow.transport_temperature}}</td>
               <td>{{dataRow.icd_10}}</td>
+              <td>{{dataRow.refering_doctor}}</td>
+              <td>{{dataRow.refering_doctor_email}}</td>
+              <td>{{dataRow.refering_doctor_phone}}</td>
               <td ng-repeat="testsHeader in testsHeaders;">
-                <!-- {{$index}} -->
                 {{dataRow.tests[$index][testsHeader.key]}}
               </td>
             </tr>
