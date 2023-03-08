@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <style>
+      #report-app .loader-section {
+        padding: 5rem;
+        text-align: center;
+        background-color: #f2f2f2;
+        margin-top: 10px;
+        margin-bottom: 20px;
+      }
+
+      #report-app .spaced {
+        margin-top: 5rem;
+      }
+      #report-app table {
+        border-collapse: collapse;
+      }
+      #report-app table,
+      #report-app th,
+      #report-app td {
+        border: 1px solid #c0c0c0;
+      }
+      #report-app th {
+        text-align: center;
+      }
+      #report-app td,
+      #report-app th {
+        height: 25px;
+        padding: 6px;
+        margin: 10px;
+      }
+
+      #report-app .loader {
+        border: 16px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 16px solid #3498db;
+        width: 120px;
+        height: 120px;
+        -webkit-animation: spin 2s linear infinite; /* Safari */
+        animation: spin 2s linear infinite;
+      }
+
+      /* Safari */
+      @-webkit-keyframes spin {
+        0% {
+          -webkit-transform: rotate(0deg);
+        }
+        100% {
+          -webkit-transform: rotate(360deg);
+        }
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      #report-app .selection-btn {
+        margin-left: 6px;
+        padding: 6px 6px;
+        border: solid 1px #dbdada;
+        border-radius: 4px;
+      }
+
+      #report-app .active-btn {
+        background-color: #3498db;
+        color: #fff;
+        font-weight: 600;
+      }
+      #report-app .wrapper {
+        width: 400px;
+        position: relative;
+      }
+      #report-app .wrapper .selected-items-box {
+        cursor: pointer;
+        border: solid 1px #ddd;
+        padding: 5px;
+        background-color: transparent;
+        color: #222;
+        width: 400px;
+      }
+      #report-app .selected-items-box .items-list {
+        list-style-type: none;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+      }
+      #report-app .selected-items-box .items-list li {
+        display: inline;
+      }
+
+      #report-app .wrapper .list {
+        display: none;
+        height: 320px;
+        width: 400px;
+        overflow-y: hidden;
+        overflow-x: hidden;
+        border-left: solid 1px #c7c6c7;
+        border-right: solid 1px #c7c6c7;
+        border-bottom: solid 1px #c7c6c7;
+        z-index: 100;
+        position: absolute;
+        box-shadow: 0 3px 1px -2px rgb(0 0 0 / 20%),
+          0 2px 2px 0 rgb(0 0 0 / 14%), 0 1px 5px 0 rgb(0 0 0 / 12%);
+      }
+      #report-app .list .items-list {
+        list-style-type: none;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        height: 215px;
+        overflow: auto;
+      }
+      #report-app .list .items-list li {
+        margin: 0;
+        width: 100%;
+        padding: 0;
+        border-bottom: solid 1px #c7c6c7;
+        padding: 5px;
+        background-color: #fff;
+      }
+
+      #report-app .selections-multiple-lis {
+        background-color: #fff;
+        z-index: 21;
+      }
+      #report-app .search-input {
+        border-radius: 4px;
+        border: solid 1px #22222252;
+        padding: 6px;
+      }
+    </style>
+
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css"
+    />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"
+      integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script type="text/javascript">
+      angular
+        .module("reportModule", [])
+        .factory("FactoryDefns", function ($window, $http) {
+          var uri = "data:application/vnd.ms-excel;base64,",
+            template =
+              '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table border="1">{table}</table><br /><table border="1">{table}</table></body></html>',
+            base64 = function (s) {
+              return $window.btoa(unescape(encodeURIComponent(s)));
+            },
+            format = function (s, c) {
+              return s.replace(/{(\w+)}/g, function (m, p) {
+                return c[p];
+              });
+            };
+          return {
+            tableToExcel: function () {
+              var tables = $(
+                ".pop-table, .maternal-table, .cchp-table, .opd-table, .ipd-table, .death-table, .notifiable-table, .tracer-table"
+              );
+              var ctx = { worksheet: "Sheet 1" };
+              var str =
+                '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>';
+
+              tables.each(function (index) {
+                $(this)
+                  .find("td.hidden")
+                  .each(function (index2) {
+                    this.remove();
+                  });
+                ctx["table" + index] = this.innerHTML;
+                if (this.title == "no-border") {
+                  str += "<table>{" + "table" + index + "}</table><br />";
+                } else {
+                  str +=
+                    '<table border="1">{' + "table" + index + "}</table><br />";
+                }
+              });
+              str += "</body></html>";
+              var href = uri + base64(format(str, ctx));
+              return href;
+            },
+            getTestOrders: async function (q) {
+              return await $http
+                .get(
+                  `../../../openmrs/ws/rest/v1/icare/concept?limit=10&conceptClass=Test&searchTerm=TEST_ORDERS${
+                    q ? "&q=" + q : ""
+                  }`
+                )
+                .then((response) => {
+                  return response.data;
+                });
+            },
+            getRejectionReasons: async function (q) {
+              return await $http
+                .get(
+                  `../../../openmrs/ws/rest/v1/icare/concept?conceptClass=Misc&searchTerm=SAMPLE_REJECTION_REASONS`
+                )
+                .then((response) => {
+                  return response.data;
+                });
+            },
+            getData: async function (reportDimensions, datasetUuid, testUuid) {
+              if (!reportDimensions) {
+                return null;
+              }
+              return await $http
+                .get(
+                  `../../../openmrs/ws/rest/v1/reportingrest/dataSet/${datasetUuid}?startDate=${reportDimensions?.startDate}&endDate=${reportDimensions?.endDate}&conceptUuid=${testUuid}`
+                )
+                .then((response) => {
+                  return response.data;
+                });
+            },
+          };
+        })
+        .controller("reportController", [
+          "$scope",
+          "$http",
+          "$timeout",
+          "$q",
+          "FactoryDefns",
+          function ($scope, $http, $timeout, $q, FactoryDefns) {
+                $scope.currentUser = null;
+                $scope.loading = false;
+                $scope.reasonsHeaders = [];
+                $scope.reportDimensions = {
+                startDate: window["iReportsDimensions"]
+                    ? window["iReportsDimensions"]?.startDate
+                    : "2022-11-22",
+                endDate: window["iReportsDimensions"]
+                    ? window["iReportsDimensions"]?.endDate
+                    : new Date().getFullYear().toString() +
+                    "-" +
+                    new Date().getMonth() +
+                    1 +
+                    "-" +
+                    new Date().getDate(),
+                };
+                let datasetUuid = "44570e32-5a4c-4f6c-a9e9-2b040660dff4"
+                $scope.dataRows = [];
+                $scope.maxRejectionReasons = 1;
+                $scope.loading = true;
+                $scope.testOrders = [];
+                $scope.rejectionReasons = [];
+                $scope.selectedItems = [];
+                $scope.showMultipleSelection = true;
+
+                $scope.loadData = function(){
+                    $scope.selectedItems?.forEach((item) => {
+                        FactoryDefns.getData($scope.reportDimensions, datasetUuid, item?.uuid).then((response) => {
+                           
+                            const responseRows = response?.rows?.map((row, index) => {
+                                return {
+                                    ...row,
+                                    test: row.test.replace("TEST_ORDERS:","")
+                                }
+                              });
+                            $scope.dataRows = [
+                              ...$scope.dataRows,
+                              ...responseRows
+                            ]
+
+                            
+
+                            $scope.loading = false;
+                            $scope.$apply();
+                        });
+                    });
+                }
+
+                $scope.getSelectedItem = (event, testOrder) => {
+                        $scope.testOrders =
+                            $scope.testOrders.filter(
+                            (test) => test.uuid != testOrder.uuid
+                            ) || [];
+                        $scope.selectedItems = _.uniqBy(
+                            [...$scope.selectedItems, testOrder],
+                            "uuid"
+                        );
+                        };    
+                
+
+                $scope.unSelectItem = (event, testOrder) => {
+                $scope.selectedItems =
+                    $scope.selectedItems.filter(
+                    (test) => test.uuid != testOrder.uuid
+                    ) || [];
+                $scope.testOrders = _.uniqBy(
+                    [...$scope.testOrders, testOrder],
+                    "uuid"
+                );
+                };
+
+                $scope.toggleMultipleSelection = (event) => {
+                 $scope.showMultipleSelection = !$scope.showMultipleSelection;
+                };
+
+                $scope.updateTestOrders = () => {
+                  $scope.showMultipleSelection = false;
+                  $scope.loadData($scope.reportDimensions);
+                };
+
+                $scope.onSearchTestOrders = (event) => {
+                $scope.searchingText = event.target.value;
+                $scope.getTestOrders();
+                };
+
+                $scope.getTestOrders = () => {
+                FactoryDefns.getTestOrders($scope.searchingText).then(
+                    (response) => {
+                    $scope.testOrders = response?.results.map((result) => {
+                        return {
+                        ...result,
+                        display: result.display.replace("TEST_ORDERS:", ""),
+                        };
+                    });
+                    $scope.$apply();
+                    }
+                );
+                };
+
+                $scope.getTestOrders();
+                FactoryDefns.getRejectionReasons().then((response) => {
+                  console.log("Rejection Reasons: ", response)
+                });
+            
+            },
+        ]);
+    </script>
+  </head>
+  <body>
+    <div id="report-app" ng-app="reportModule" ng-controller="reportController">
+      <h3 class="text-center">Sample Rejection Statistics</h3>
+      
+      <div class="selections-multiple-lis">
+        <div class="wrapper">
+          <div
+            class="selected-items-box"
+            ng-click="toggleMultipleSelection($event)"
+          >
+            <span> Test Orders</span>
+            <span>
+              <img
+                height="10"
+                style="float: right"
+                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAA6UlEQVRIie3TsUtCURTH8Y8aCAYSCWEQNASCBA0tDU7h1lJLS1tTSzQF7U3i1NbU1hz+A04NLWJBBEEQGGZQ4NjckA9CeOrT1/a+cId77u98OWe4JCTEwT2q/+Ctog0VfGIvRvkOvrAdFDbRw34M8l18YGv4oYw3HM4gP8A7NsICJXRwMoX8CF2sjwuu4gWnEeTHeMXapA1FPKI2QfYMz1iJMBBYwgPqSIVkzvGE5ajygAXc4RLpP/UULtBCYVp5wDyauMYcMrjCLfLjmsNWHyaHBvqD+6Lfj/kdcdiRZHEzONk4xQkJo/kBrP8gcz3u2LkAAAAASUVORK5CYII="
+              />
+            </span>
+          </div>
+          <div
+            style="background-color: #fff"
+            class="list"
+            ng-style="{'display': showMultipleSelection ? 'block': 'none'}"
+          >
+            <div
+              ng-if="!testOrders"
+              style="
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <div class="loader"></div>
+            </div>
+            <table class="table">
+              <tr>
+                <td colspan="2">
+                  <input
+                    class="search-input"
+                    placeholder="Search from all test orders"
+                    style="width: 100%"
+                    ng-keyup="onSearchTestOrders($event)"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td style="width: 50%">
+                  <ul class="items-list">
+                    <li
+                      ng-repeat="item in testOrders"
+                      ng-click="getSelectedItem($event, item)"
+                    >
+                      <span>{{item.display}}</span>
+                    </li>
+                  </ul>
+                </td>
+                <td style="width: 50%">
+                  <ul class="items-list">
+                    <li
+                      ng-repeat="item in selectedItems"
+                      ng-click="unSelectItem($event, item)"
+                    >
+                      <span>{{item.display}}</span>
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <button
+                    class="btn btn-primary"
+                    style="float: right"
+                    ng-disabled="selectedItems.length ==0"
+                    ng-click="updateTestOrders()"
+                  >
+                    Update
+                  </button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div style="width: 100%; overflow: auto; margin-top: 16px">
+        <table class="table table-bordered" ng-if="!loading">
+          <thead style="background-color: #2e8180; color: #fff">
+            <tr>
+              <th>SN</th>
+              <th>Test</th>
+              <th>Health Facility</th>
+              <th>Number of Requests</th>
+              <th>Number of Rejects</th>
+              <th>Percentage of Rejects</th>
+              <th ng-repeat="testsHeader in testsHeaders;">
+                {{testsHeader.name}}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="dataRow in dataRows;">
+              <td>{{$index+1}}</td>
+              <td>{{dataRow.test}}</td>
+              <td>{{dataRow.health_facility}}</td>
+              <td>{{dataRow.number_of_requests}}</td>
+              <td>{{dataRow.number_of_rejects}}</td>
+              <td>{{dataRow.percentage_of_rejects}}</td>
+              <td>{{dataRow.rejection_reason}}</td>
+            </tr>
+            
+          </tbody>
+        </table>
+        <div
+          ng-if="loading"
+          style="
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "
+        >
+          <div class="loader"></div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
