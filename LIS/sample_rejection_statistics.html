@@ -277,6 +277,7 @@
 
 
         $scope.loadData = function () {
+          $scope.dataRows = []
           $scope.selectedItems?.forEach((item) => {
             FactoryDefns.getData($scope.reportDimensions, datasetUuid, item?.uuid).then((response) => {
 

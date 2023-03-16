@@ -159,58 +159,20 @@
                   1 +
                   "-" +
                   new Date().getDate(),
-              dataSetUuid: "fbad3ee4-150a-4cb6-95ad-84002bb93ffd",
+              dataSetUuid: "bd2c1468-96ef-4550-927a-8a3ee1a39f0f",
             };
             $scope.dataRows = [];
-            $scope.maxRejectionReasons = 1;
             $scope.loading = true;
             FactoryDefns.getData($scope.reportDimensions).then((response) => {
               const responseRows = response?.rows;
               $scope.dataRows = responseRows?.map((row, index) => {
                 return {
                     ...row,
-                    test: row.test.replace("TEST_ORDERS:","")
+                    test: row.test.replace("TEST_ORDERS:",""),
+                    work_area : row.work_area?row.work_area.replace("LAB_DEPARTMENT:",""):""
+                    
                 }
               })
-              //test : responseRows.test.replace("TEST_ORDERS:","")
-              //   console.log(groupedRows);
-            //   Object.keys(groupedRows).map((key) => {
-            //     // Set max rejection reason
-            //     if ($scope.maxRejectionReasons < groupedRows[key].length) {
-            //       $scope.maxRejectionReasons = groupedRows[key].length;
-            //     }
-            //     const data = groupedRows[key][0];
-            //     $scope.dataRows = [
-            //       ...$scope.dataRows,
-            //       {
-            //         ...data,
-            //         test: data.test.replace("TEST_ORDERS:",""),
-            //         rejectionReasons: _.flatten(
-            //           groupedRows[key].map((rowData) => {
-            //             return [
-            //               {
-            //                 ...rowData,
-            //                 reason: rowData.rejection_reason
-            //                   ? rowData.rejection_reason.replace("SAMPLE_REJECTION_REASONS:", "")
-            //                   : "",
-            //               },
-            //             ];
-            //           })
-            //         ),
-            //       },
-            //     ];
-            //   });
-
-            //   for (let count = 0; count < $scope.maxRejectionReasons; count++) {
-            //     $scope.reasonsHeaders = [
-            //       ...$scope.reasonsHeaders,
-            //       {
-            //         count,
-            //         name: "Reason " + (count + 1),
-            //         key: "reason",
-            //       },
-            //     ];
-            //   }
 
               $scope.loading = false;
               $scope.$apply();
@@ -221,61 +183,39 @@
   </head>
   <body>
     <div id="report-app" ng-app="reportModule" ng-controller="reportController">
-      <h3 class="text-center">Sample Results Analysis</h3>
+      <h3 class="text-center">Turn Around Time</h3>
       <div style="width: 100%; overflow: auto; margin-top: 16px">
         <table class="table table-bordered" ng-if="!loading">
           <thead style="background-color: #2e8180; color: #fff">
             <tr>
               <th>SN</th>
               <th>Lab No</th>
-              <th>Request Doctor</th>
-              <th>Health Facility</th>
-              <th>Patient Name</th>
-              <th>File No</th>
-              <th>Age(Years)</th>
-              <th>Age(Days)</th>
-              <th>Date Of Birth</th>
-              <th>Sex</th>
-              <th>Address</th>
-              <th>Registration Date</th>
-              <th>Collection Date</th>
-              <th>Received Date</th>
-              <th>Delivered Date</th>
-              <th>ICD 10</th>
-              <th>Result Input By</th>
-              <th>Result Input Date</th>
-              <th>Result Verified By</th>
-              <th>Result Verified Date</th>
-              <th>Analyser/Machine</th>
               <th>Test</th>
-              <th>Laboratory Results</th>
+              <th>Priority</th>
+              <th>Health Facility</th>
+              <th>Work Area</th>
+              <th>Received Date</th>
+              <th>Registered Date</th>
+              <th>Collect -> Registration</th>
+              <th>Received at Lab -> Registration</th>
+              <th>Requ -> FullRes</th>
+              <th>Requ -> Reviewed</th>
             </tr>
           </thead>
           <tbody>
             <tr ng-repeat="dataRow in dataRows;">
               <td>{{$index+1}}</td>
               <td>{{dataRow.lab_no}}</td>
-              <td>{{dataRow.request_doctor}}</td>
-              <td>{{dataRow.health_facility}}</td>
-              <td>{{dataRow.patient_name}}</td>
-              <td>{{dataRow.file_no}}</td>
-              <td>{{dataRow.age_years}}</td>
-              <td>{{dataRow.age_days}}</td>
-              <td>{{dataRow.date_of_birth}}</td>
-              <td>{{dataRow.sex}}</td>
-              <td>{{dataRow.address}}</td>
-              <td>{{dataRow.reg_date}}</td>
-              <td>{{dataRow.collected_on | date:"medium"}}</td>
-              <td>{{dataRow.received_on | date:"medium"}}</td>
-              <td>{{dataRow.delivered_on | date:"medium"}}</td>
-              <td>{{dataRow.icd_10}}</td>
-              <td>{{dataRow.result_input_by}}</td>
-              <td>{{dataRow.result_input_date}}</td>
-              <td>{{dataRow.result_verified_by}}</td>
-              <td>{{dataRow.result_verified_date}}</td>
-              <td>{{dataRow.instrument}}</td>
               <td>{{dataRow.test}}</td>
-              <td>{{dataRow.lab_result}}</td>
+              <td>{{dataRow.priority}}</td>
+              <td>{{dataRow.health_facility}}</td>
+              <td>{{dataRow.work_area}}</td>
+              <td>{{dataRow.received_on | date:"medium"}}</td>
+              <td>{{dataRow.registered_on }}</td>
+              <td>{{dataRow.collection_registration}}</td>
+              <td>{{dataRow.received_registration}}</td>
+              <td>{{dataRow.requested_full_result}}</td>
+              <td>{{dataRow.requested_reviewed}}</td>
             </tr>
           </tbody>
         </table>
