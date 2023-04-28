@@ -2,18 +2,6 @@
 <html lang="en">
   <head>
     <style>
-      #report-app .loader-section {
-        padding: 5rem;
-        text-align: center;
-        background-color: #f2f2f2;
-        margin-top: 10px;
-        margin-bottom: 20px;
-      }
-
-      #report-app .spaced {
-        margin-top: 5rem;
-      }
-
       #report-app .loader {
         border: 16px solid #f3f3f3;
         border-radius: 50%;
@@ -61,32 +49,6 @@
               });
             };
           return {
-            tableToExcel: function () {
-              var tables = $(
-                ".pop-table, .maternal-table, .cchp-table, .opd-table, .ipd-table, .death-table, .notifiable-table, .tracer-table"
-              );
-              var ctx = { worksheet: "Sheet 1" };
-              var str =
-                '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>';
-
-              tables.each(function (index) {
-                $(this)
-                  .find("td.hidden")
-                  .each(function (index2) {
-                    this.remove();
-                  });
-                ctx["table" + index] = this.innerHTML;
-                if (this.title == "no-border") {
-                  str += "<table>{" + "table" + index + "}</table><br />";
-                } else {
-                  str +=
-                    '<table border="1">{' + "table" + index + "}</table><br />";
-                }
-              });
-              str += "</body></html>";
-              var href = uri + base64(format(str, ctx));
-              return href;
-            },
             getSamplesList: async function (reportDimensions) {
               if (!reportDimensions) {
                 return null;
@@ -126,7 +88,6 @@
           "$q",
           "FactoryDefns",
           function ($scope, $http, $timeout, $q, FactoryDefns) {
-            $scope.currentUser = null;
             $scope.loading = false;
             $scope.departments = [];
             $scope.specimenSources = [];
