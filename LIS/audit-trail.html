@@ -15,6 +15,14 @@
         border-radius: 4px;
         padding: 6px;
       }
+      #report-app .item-selection {
+        padding: 8px;
+      }
+
+      #report-app .date-input {
+        padding: 4px;
+        border-radius: 3px;
+      }
     </style>
 
     <link
@@ -59,7 +67,25 @@
               }
               return await $http
                 .get(
-                  `../../../../../openmrs/ws/rest/v1/lab/samples?page=${reportDimensions.page}&pageSize=${reportDimensions.itemsPerPage}&startDate=${reportDimensions.startDate}&endDate=${reportDimensions.endDate}&hasStatus=YES&excludeAllocations=false`
+                  `../../../../../openmrs/ws/rest/v1/lab/samples?page=${
+                    reportDimensions.page
+                  }&pageSize=${reportDimensions.itemsPerPage}&startDate=${
+                    reportDimensions.startDate
+                  }&endDate=${
+                    reportDimensions.endDate
+                  }&hasStatus=YES&excludeAllocations=false${
+                    reportDimensions?.department?.uuid
+                      ? "&department=" + reportDimensions?.department?.uuid
+                      : ""
+                  }${
+                    reportDimensions?.specimenSource?.uuid
+                      ? "&specimen=" + reportDimensions?.specimenSource?.uuid
+                      : ""
+                  }${
+                    reportDimensions?.testOrder?.uuid
+                      ? "&test=" + reportDimensions?.testOrder?.uuid
+                      : ""
+                  }`
                 )
                 .then((response) => {
                   return response.data;
@@ -93,8 +119,16 @@
           "FactoryDefns",
           function ($scope, $http, $timeout, $q, FactoryDefns) {
             $scope.loading = false;
-            $scope.departments = [];
-            $scope.specimenSources = [];
+            $scope.departments = null;
+            $scope.specimenSources = null;
+            $scope.testOrders = null;
+            $scope.equipments = null;
+
+            $scope.selectedDepartment = null;
+            $scope.testOrder = null;
+            $scope.specimenSource = null;
+            $scope.equipment = null;
+
             $scope.samplesData = {};
             $scope.today = new Date();
             $scope.startDate = null;
@@ -169,15 +203,22 @@
 
             FactoryDefns.getDepartments().then((response) => {
               if (response) {
+                console.log("response", response);
+                $scope.departments = response?.results?.map((result) => {
+                  return {
+                    uuid: result?.uuid,
+                    display: result?.display?.replace("LAB_DEPARTMENT:", ""),
+                  };
+                });
                 FactoryDefns.getSpecimenSources().then(
                   (departmentsResponse) => {
                     if (departmentsResponse) {
                       $scope.specimenSources = departmentsResponse?.results;
-                      $scope.departments = response?.results;
                       //   $scope.loadData();
                     }
                   }
                 );
+                $scope.$apply();
               }
             });
 
@@ -218,8 +259,6 @@
             };
 
             $scope.getSamples = (event, action) => {
-              console.log(event);
-              console.log(action);
               $scope.currentPage =
                 action === "next"
                   ? $scope.currentPage + 1
@@ -227,6 +266,21 @@
               $scope.reportDimensions = {
                 itemsPerPage: $scope.itemsPerPage,
                 page: $scope.currentPage,
+                startDate: $scope.startDate.toISOString(),
+                endDate: $scope.endDate.toISOString(),
+              };
+              $scope.loadData($scope.reportDimensions);
+            };
+
+            $scope.getSelectedDepartment = (event, selectedDepartment) => {
+              $scope.selectedDepartment = selectedDepartment;
+              $scope.reportDimensions = {
+                itemsPerPage: $scope.itemsPerPage,
+                page: $scope.currentPage,
+                department: $scope.selectedDepartment,
+                testOrder: $scope.testOrder,
+                specimenSource: $scope.specimenSource,
+                equipment: $scope.equipment,
                 startDate: $scope.startDate.toISOString(),
                 endDate: $scope.endDate.toISOString(),
               };
@@ -252,9 +306,10 @@
   <body>
     <div id="report-app" ng-app="reportModule" ng-controller="reportController">
       <h3 class="text-center"><b> Audit Trail </b></h3>
-      <div class="w-100">
+      <div class="w-100" ng-if="departments">
         StartDate:
         <input
+          class="date-input"
           ng-model="startDate"
           max="{{today}}"
           placeholder="Start date"
@@ -262,8 +317,20 @@
         />
         <span style="margin-left: 8px">
           End Date:
-          <input ng-model="endDate" placeholder="End date" type="date" />
+          <input
+            class="date-input"
+            ng-model="endDate"
+            placeholder="End date"
+            type="date"
+          />
         </span>
+        <select
+          style="margin-left: 8px"
+          class="item-selection"
+          ng-options="item as item.display for item in departments track by item.uuid"
+          ng-model="selectedDepartment"
+          ng-change="getSelectedDepartment($event,selectedDepartment)"
+        ></select>
         <button
           ng-disabled="!startDate || !endDate"
           style="margin-left: 8px"
@@ -326,7 +393,12 @@
             </tr>
           </tbody>
         </table>
-
+        <div
+          style="width: 100"
+          ng-if=" !loading && ((samplesData.results && samplesData.results.length === 0) || !samplesData)"
+        >
+          NO data
+        </div>
         <div
           ng-if="loading"
           style="
