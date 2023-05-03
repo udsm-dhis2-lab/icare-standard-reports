@@ -71,25 +71,28 @@
               }
               return await $http
                 .get(
-                  `../../../../../openmrs/ws/rest/v1/lab/samples?page=${
-                    reportDimensions.page
-                  }&pageSize=${reportDimensions.itemsPerPage}&startDate=${
-                    reportDimensions.startDate
-                  }&endDate=${
-                    reportDimensions.endDate
-                  }&hasStatus=YES&excludeAllocations=false${
-                    reportDimensions?.department?.uuid
-                      ? "&department=" + reportDimensions?.department?.uuid
-                      : ""
-                  }${
-                    reportDimensions?.specimenSource?.uuid
-                      ? "&specimen=" + reportDimensions?.specimenSource?.uuid
-                      : ""
-                  }${
-                    reportDimensions?.testOrder?.uuid
-                      ? "&test=" + reportDimensions?.testOrder?.uuid
-                      : ""
-                  }`
+                  !reportDimensions?.q
+                    ? `../../../../../openmrs/ws/rest/v1/lab/samples?page=${
+                        reportDimensions.page
+                      }&pageSize=${reportDimensions.itemsPerPage}&startDate=${
+                        reportDimensions.startDate
+                      }&endDate=${
+                        reportDimensions.endDate
+                      }&hasStatus=YES&excludeAllocations=false${
+                        reportDimensions?.department?.uuid
+                          ? "&department=" + reportDimensions?.department?.uuid
+                          : ""
+                      }${
+                        reportDimensions?.specimenSource?.uuid
+                          ? "&specimen=" +
+                            reportDimensions?.specimenSource?.uuid
+                          : ""
+                      }${
+                        reportDimensions?.testOrder?.uuid
+                          ? "&test=" + reportDimensions?.testOrder?.uuid
+                          : ""
+                      }`
+                    : `../../../../../openmrs/ws/rest/v1/lab/samples?page=${reportDimensions.page}&pageSize=${reportDimensions.itemsPerPage}&q=${reportDimensions.q}&hasStatus=YES&excludeAllocations=false`
                 )
                 .then((response) => {
                   return response.data;
@@ -132,6 +135,7 @@
           "FactoryDefns",
           function ($scope, $http, $timeout, $q, FactoryDefns) {
             $scope.loading = false;
+            $scope.selectedFilterType = "other";
             $scope.departments = null;
             $scope.specimenSources = null;
             $scope.testOrders = null;
@@ -148,6 +152,7 @@
             $scope.endDate = null;
             $scope.itemsPerPage = 10;
             $scope.currentPage = 1;
+            $scope.currenSample = null;
             $scope.reportDimensions = {
               startDate: null,
               endDate: null,
@@ -162,8 +167,8 @@
                 $scope.samplesData = {
                   pager: response?.pager,
                   results: _.flatten(
-                    response?.results?.map((result) => {
-                      return result?.orders?.map((order) => {
+                    response?.results?.map((result, index) => {
+                      return result?.orders?.map((order, orderIndex) => {
                         const results = _.flatten(
                           (
                             order?.testAllocations?.filter(
@@ -194,6 +199,9 @@
                             order?.testAllocations.length;
                         }
                         return {
+                          count: orderIndex === 0 ? index + 1 : null,
+                          rowspan:
+                            orderIndex === 0 ? result?.orders.length : null,
                           ...result,
                           testOrder: order?.order,
                           testAllocations: order?.testAllocations,
@@ -291,10 +299,15 @@
                 testOrder: $scope.testOrder,
                 specimenSource: $scope.specimenSource,
                 equipment: $scope.equipment,
-                startDate: $scope.startDate.toISOString(),
-                endDate: $scope.endDate.toISOString(),
+                startDate: $scope.startDate?.toISOString(),
+                endDate: $scope.endDate?.toISOString(),
               };
-              $scope.loadData($scope.reportDimensions);
+              if (
+                $scope.reportDimensions?.startDate &&
+                $scope.reportDimensions?.endDate
+              ) {
+                $scope.loadData($scope.reportDimensions);
+              }
             };
 
             $scope.getSelectedDepartment = (event, selectedDepartment) => {
@@ -306,15 +319,19 @@
                 testOrder: $scope.testOrder,
                 specimenSource: $scope.specimenSource,
                 equipment: $scope.equipment,
-                startDate: $scope.startDate.toISOString(),
-                endDate: $scope.endDate.toISOString(),
+                startDate: $scope.startDate?.toISOString(),
+                endDate: $scope.endDate?.toISOString(),
               };
-              $scope.loadData($scope.reportDimensions);
+              if (
+                $scope.reportDimensions?.startDate &&
+                $scope.reportDimensions?.endDate
+              ) {
+                $scope.loadData($scope.reportDimensions);
+              }
             };
 
             $scope.getSelectedSpecimenSource = (event, specimenSource) => {
               $scope.specimenSource = specimenSource;
-              console.log($scope.specimenSource);
               $scope.reportDimensions = {
                 itemsPerPage: $scope.itemsPerPage,
                 page: $scope.currentPage,
@@ -322,8 +339,23 @@
                 testOrder: $scope.testOrder,
                 specimenSource: $scope.specimenSource,
                 equipment: $scope.equipment,
-                startDate: $scope.startDate.toISOString(),
-                endDate: $scope.endDate.toISOString(),
+                startDate: $scope.startDate?.toISOString(),
+                endDate: $scope.endDate?.toISOString(),
+              };
+              if (
+                $scope.reportDimensions?.startDate &&
+                $scope.reportDimensions?.endDate
+              ) {
+                $scope.loadData($scope.reportDimensions);
+              }
+            };
+
+            $scope.filterSampels = (event) => {
+              const searchingText = event.target.value;
+              $scope.reportDimensions = {
+                q: searchingText,
+                itemsPerPage: $scope.itemsPerPage,
+                page: 1,
               };
               $scope.loadData($scope.reportDimensions);
             };
@@ -337,12 +369,17 @@
                 testOrder: $scope.testOrder,
                 specimenSource: $scope.specimenSource,
                 equipment: $scope.equipment,
-                startDate: $scope.startDate.toISOString(),
-                endDate: $scope.endDate.toISOString(),
+                startDate: $scope.startDate?.toISOString(),
+                endDate: $scope.endDate?.toISOString(),
               };
               if ($scope.startDate && $scope.endDate) {
                 $scope.loadData($scope.reportDimensions);
               }
+            };
+
+            $scope.getSelectedFilterType = (selectedFilterType) => {
+              $scope.selectedFilterType = selectedFilterType;
+              $scope.samplesData = null;
             };
           },
         ]);
@@ -351,51 +388,92 @@
   <body>
     <div id="report-app" ng-app="reportModule" ng-controller="reportController">
       <h3 class="text-center"><b> Audit Trail </b></h3>
-      <div class="w-100" ng-if="departments && specimenSources">
-        StartDate:
-        <input
-          class="date-input"
-          ng-model="startDate"
-          max="{{today}}"
-          placeholder="Start date"
-          type="date"
-        />
-        <span style="margin-left: 8px">
-          End Date:
-          <input
-            class="date-input"
-            ng-model="endDate"
-            placeholder="End date"
-            type="date"
+      <div class="w-100">
+        <span>
+          <span>By Lab No:</span
+          ><input
+            style="margin-left: 4px"
+            ng-model="selectedFilterType"
+            ng-change="getSelectedFilterType('labNo')"
+            type="checkbox"
+            value="'labNo'"
+            ng-checked="selectedFilterType == 'labNo'"
           />
         </span>
-        <select
-          style="margin-left: 8px"
-          class="item-selection"
-          ng-options="item as item.display for item in departments track by item.uuid"
-          ng-model="selectedDepartment"
-          ng-change="getSelectedDepartment($event,selectedDepartment)"
-        >
-          <option></option>
-        </select>
-        <select
-          style="margin-left: 8px"
-          class="item-selection"
-          ng-options="item as item.display for item in specimenSources track by item.uuid"
-          ng-model="specimenSource"
-          ng-change="getSelectedSpecimenSource($event,specimenSource)"
-        >
-          <option></option>
-        </select>
+        <span style="margin-left: 16px">
+          <span> By Filter parameters: </span>
+          <input
+            style="margin-left: 4px"
+            ng-model="selectedFilterType"
+            ng-change="getSelectedFilterType('other')"
+            type="checkbox"
+            ng-checked="selectedFilterType == 'other'"
+          />
+        </span>
+      </div>
+      <div
+        class="w-100"
+        ng-if="departments && specimenSources"
+        style="margin-top: 16px"
+      >
+        <div class="w-100" ng-if="selectedFilterType == 'labNo'">
+          <span>
+            <span> Lab No: </span>
+            <span>
+              <input type="text" ng-keyup="filterSampels($event)" />
+            </span>
+          </span>
+        </div>
+        <div class="w-100" ng-if="selectedFilterType == 'other'">
+          <span>
+            StartDate:
+            <input
+              class="date-input"
+              ng-model="startDate"
+              max="{{today}}"
+              placeholder="Start date"
+              type="date"
+            />
+          </span>
+          <span style="margin-left: 8px">
+            End Date:
+            <input
+              class="date-input"
+              ng-model="endDate"
+              placeholder="End date"
+              type="date"
+            />
+          </span>
+          <span style="margin-left: 8px"> Department</span>
+          <select
+            style="margin-left: 3px"
+            class="item-selection"
+            ng-options="item as item.display for item in departments track by item.uuid"
+            ng-model="selectedDepartment"
+            ng-change="getSelectedDepartment($event,selectedDepartment)"
+          >
+            <option></option>
+          </select>
+          <span style="margin-left: 8px"> Specimen/Source</span>
+          <select
+            style="margin-left: 3px"
+            class="item-selection"
+            ng-options="item as item.display for item in specimenSources track by item.uuid"
+            ng-model="specimenSource"
+            ng-change="getSelectedSpecimenSource($event,specimenSource)"
+          >
+            <option></option>
+          </select>
 
-        <button
-          class="report-btn"
-          ng-disabled="!startDate || !endDate"
-          style="margin-left: 8px"
-          ng-click="getReport(startDate,endDate)"
-        >
-          Get Report
-        </button>
+          <button
+            class="report-btn"
+            ng-disabled="!startDate || !endDate"
+            style="margin-left: 8px"
+            ng-click="getReport(startDate,endDate)"
+          >
+            Get Report
+          </button>
+        </div>
       </div>
       <div style="width: 100%; overflow: auto; margin-top: 8px">
         <table class="table table-bordered" ng-if="!loading">
@@ -415,10 +493,19 @@
               <th>Authorized On</th>
               <th colspan="{{maximumParametersCount}}">Test Parameters</th>
             </tr>
+            <tr ng-if="currenSample">
+              <td colspan="100%"></td>
+            </tr>
           </thead>
           <tbody ng-repeat="sampleTestOrder in samplesData.results">
             <tr>
-              <td style="width: 50px">{{$index + 1}}</td>
+              <td
+                style="width: 50px"
+                *ngIf="sampleTestOrder.count"
+                rowspan="{{sampleTestOrder.rowspan}}"
+              >
+                {{sampleTestOrder.count}}
+              </td>
               <td style="width: 120px">
                 {{sampleTestOrder.location.display ?
                 sampleTestOrder.location.display: '-'}}
@@ -475,19 +562,20 @@
         style="margin-top: 16px"
       >
         <button
-          ng-disabled="!startDate || !endDate || currentPage === 1"
-          class="control-btn"
-          ng-click="getSamples($event, 'prev')"
-          style="margin-left: 8px"
-        >
-          Prev
-        </button>
-        <button
+          style="margin-left: 8px; float: right"
           ng-disabled="!startDate || !endDate || samplesData.results.length < itemsPerPage"
           class="control-btn"
           ng-click="getSamples($event, 'next')"
         >
           Next
+        </button>
+        <button
+          ng-disabled="!startDate || !endDate || currentPage === 1"
+          class="control-btn"
+          ng-click="getSamples($event, 'prev')"
+          style="margin-left: 8px; float: right"
+        >
+          Prev
         </button>
       </div>
     </div>
