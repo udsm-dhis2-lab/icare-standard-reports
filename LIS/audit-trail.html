@@ -11,6 +11,10 @@
         -webkit-animation: spin 2s linear infinite; /* Safari */
         animation: spin 2s linear infinite;
       }
+      #report-app .control-btn {
+        border-radius: 4px;
+        padding: 6px;
+      }
     </style>
 
     <link
@@ -55,7 +59,7 @@
               }
               return await $http
                 .get(
-                  `../../../../../openmrs/ws/rest/v1/lab/samples?page=1&pageSize=10&startDate=${reportDimensions.startDate}&endDate=${reportDimensions.endDate}&hasStatus=YES&excludeAllocations=false`
+                  `../../../../../openmrs/ws/rest/v1/lab/samples?page=${reportDimensions.page}&pageSize=${reportDimensions.itemsPerPage}&startDate=${reportDimensions.startDate}&endDate=${reportDimensions.endDate}&hasStatus=YES&excludeAllocations=false`
                 )
                 .then((response) => {
                   return response.data;
@@ -95,9 +99,13 @@
             $scope.today = new Date();
             $scope.startDate = null;
             $scope.endDate = null;
+            $scope.itemsPerPage = 10;
+            $scope.currentPage = 1;
             $scope.reportDimensions = {
               startDate: null,
               endDate: null,
+              page: 1,
+              itemsPerPage: $scope.itemsPerPage,
             };
             $scope.maximumParametersCount = 1;
 
@@ -209,10 +217,27 @@
                 : "-";
             };
 
+            $scope.getSamples = (event, action) => {
+              console.log(event);
+              console.log(action);
+              $scope.currentPage =
+                action === "next"
+                  ? $scope.currentPage + 1
+                  : $scope.currentPage - 1;
+              $scope.reportDimensions = {
+                itemsPerPage: $scope.itemsPerPage,
+                page: $scope.currentPage,
+                startDate: $scope.startDate.toISOString(),
+                endDate: $scope.endDate.toISOString(),
+              };
+              $scope.loadData($scope.reportDimensions);
+            };
+
             $scope.getReport = (startDate, endDate) => {
               $scope.startDate = startDate;
               $scope.endDate = endDate;
               $scope.reportDimensions = {
+                ...$scope.reportDimensions,
                 startDate: $scope.startDate.toISOString(),
                 endDate: $scope.endDate.toISOString(),
               };
@@ -240,7 +265,7 @@
           <input ng-model="endDate" placeholder="End date" type="date" />
         </span>
         <button
-          [disabled]="!startDate || !endDate"
+          ng-disabled="!startDate || !endDate"
           style="margin-left: 8px"
           ng-click="getReport(startDate,endDate)"
         >
@@ -301,6 +326,7 @@
             </tr>
           </tbody>
         </table>
+
         <div
           ng-if="loading"
           style="
@@ -312,6 +338,27 @@
         >
           <div class="loader"></div>
         </div>
+      </div>
+      <div
+        ng-if="!loading"
+        class="d-flex justify-content-end"
+        style="margin-top: 16px"
+      >
+        <button
+          ng-disabled="!startDate || !endDate || currentPage === 1"
+          class="control-btn"
+          ng-click="getSamples($event, 'prev')"
+          style="margin-left: 8px"
+        >
+          Prev
+        </button>
+        <button
+          ng-disabled="!startDate || !endDate || samplesData.results.length < itemsPerPage"
+          class="control-btn"
+          ng-click="getSamples($event, 'next')"
+        >
+          Next
+        </button>
       </div>
     </div>
   </body>
