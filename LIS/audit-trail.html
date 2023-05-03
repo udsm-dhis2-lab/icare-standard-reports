@@ -23,6 +23,10 @@
         padding: 4px;
         border-radius: 3px;
       }
+      #report-app .report-btn {
+        padding: 6px;
+        border-radius: 4zpx;
+      }
     </style>
 
     <link
@@ -104,6 +108,15 @@
               return await $http
                 .get(
                   `../../../../../openmrs/ws/rest/v1/concept?q=SPECIMEN_SOURCE&limit=50&v=custom:(uuid,display)`
+                )
+                .then((response) => {
+                  return response.data;
+                });
+            },
+            getTestOrders: async function () {
+              return await $http
+                .get(
+                  `../../../../../openmrs/ws/rest/v1/concept?q=TEST_ORDERS&limit=50&v=custom:(uuid,display)`
                 )
                 .then((response) => {
                   return response.data;
@@ -203,7 +216,6 @@
 
             FactoryDefns.getDepartments().then((response) => {
               if (response) {
-                console.log("response", response);
                 $scope.departments = response?.results?.map((result) => {
                   return {
                     uuid: result?.uuid,
@@ -213,12 +225,21 @@
                 FactoryDefns.getSpecimenSources().then(
                   (departmentsResponse) => {
                     if (departmentsResponse) {
-                      $scope.specimenSources = departmentsResponse?.results;
+                      $scope.specimenSources =
+                        departmentsResponse?.results?.map((result) => {
+                          return {
+                            uuid: result?.uuid,
+                            display: result?.display?.replace(
+                              "SPECIMEN_SOURCE:",
+                              ""
+                            ),
+                          };
+                        });
                       //   $scope.loadData();
+                      $scope.$apply();
                     }
                   }
                 );
-                $scope.$apply();
               }
             });
 
@@ -266,6 +287,10 @@
               $scope.reportDimensions = {
                 itemsPerPage: $scope.itemsPerPage,
                 page: $scope.currentPage,
+                department: $scope.selectedDepartment,
+                testOrder: $scope.testOrder,
+                specimenSource: $scope.specimenSource,
+                equipment: $scope.equipment,
                 startDate: $scope.startDate.toISOString(),
                 endDate: $scope.endDate.toISOString(),
               };
@@ -287,11 +312,31 @@
               $scope.loadData($scope.reportDimensions);
             };
 
+            $scope.getSelectedSpecimenSource = (event, specimenSource) => {
+              $scope.specimenSource = specimenSource;
+              console.log($scope.specimenSource);
+              $scope.reportDimensions = {
+                itemsPerPage: $scope.itemsPerPage,
+                page: $scope.currentPage,
+                department: $scope.selectedDepartment,
+                testOrder: $scope.testOrder,
+                specimenSource: $scope.specimenSource,
+                equipment: $scope.equipment,
+                startDate: $scope.startDate.toISOString(),
+                endDate: $scope.endDate.toISOString(),
+              };
+              $scope.loadData($scope.reportDimensions);
+            };
+
             $scope.getReport = (startDate, endDate) => {
               $scope.startDate = startDate;
               $scope.endDate = endDate;
               $scope.reportDimensions = {
                 ...$scope.reportDimensions,
+                department: $scope.selectedDepartment,
+                testOrder: $scope.testOrder,
+                specimenSource: $scope.specimenSource,
+                equipment: $scope.equipment,
                 startDate: $scope.startDate.toISOString(),
                 endDate: $scope.endDate.toISOString(),
               };
@@ -306,7 +351,7 @@
   <body>
     <div id="report-app" ng-app="reportModule" ng-controller="reportController">
       <h3 class="text-center"><b> Audit Trail </b></h3>
-      <div class="w-100" ng-if="departments">
+      <div class="w-100" ng-if="departments && specimenSources">
         StartDate:
         <input
           class="date-input"
@@ -330,8 +375,21 @@
           ng-options="item as item.display for item in departments track by item.uuid"
           ng-model="selectedDepartment"
           ng-change="getSelectedDepartment($event,selectedDepartment)"
-        ></select>
+        >
+          <option></option>
+        </select>
+        <select
+          style="margin-left: 8px"
+          class="item-selection"
+          ng-options="item as item.display for item in specimenSources track by item.uuid"
+          ng-model="specimenSource"
+          ng-change="getSelectedSpecimenSource($event,specimenSource)"
+        >
+          <option></option>
+        </select>
+
         <button
+          class="report-btn"
           ng-disabled="!startDate || !endDate"
           style="margin-left: 8px"
           ng-click="getReport(startDate,endDate)"
