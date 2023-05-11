@@ -400,9 +400,10 @@
               }
             });
 
-            $scope.getDepertmentName = (uuid) => {
-              let name = _.keyBy($scope.departments, "uuid")[uuid]?.display;
-              return name ? name?.replace("LAB_DEPARTMENT:", "") : "-";
+            $scope.getDepertmentName = (department) => {
+              return department?.display
+                ? department?.display.replace("SPECIMEN_SOURCE:", "")
+                : "-";
             };
 
             $scope.formatTestOrderName = (display) => {
@@ -684,7 +685,7 @@
                 {{sampleTestOrder.location.display ?
                 sampleTestOrder.location.display: '-'}}
               </td>
-              <td>{{getDepertmentName(sampleTestOrder.concept.uuid)}}</td>
+              <td>{{getDepertmentName(sampleTestOrder.concept)}}</td>
               <td>{{getSpecimenSourceName(sampleTestOrder.specimenSource)}}</td>
               <td>{{sampleTestOrder.label}}</td>
               <td>{{sampleTestOrder.fileNo}}</td>
