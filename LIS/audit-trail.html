@@ -375,6 +375,30 @@
               });
             };
 
+            $scope.formatDateToYYMMDD = (dateValue, reverse) => {
+              return reverse
+                ? $scope.formatMonthOrDate(dateValue.getDate(), "d") +
+                    "-" +
+                    $scope.formatMonthOrDate(dateValue.getMonth() + 1, "m") +
+                    "-" +
+                    dateValue.getFullYear()
+                : dateValue.getFullYear() +
+                    "-" +
+                    $scope.formatMonthOrDate(dateValue.getMonth() + 1, "m") +
+                    "-" +
+                    $scope.formatMonthOrDate(dateValue.getDate(), "d");
+            };
+
+            $scope.formatMonthOrDate = (value, type) => {
+              if (type == "m" && value.toString().length == 1) {
+                return "0" + value;
+              } else if (type == "d" && value.toString().length == 1) {
+                return "0" + value;
+              } else {
+                return value;
+              }
+            };
+
             FactoryDefns.getDepartments().then((response) => {
               if (response) {
                 $scope.departments = response?.results?.map((result) => {
@@ -453,8 +477,8 @@
                 testOrder: $scope.testOrder,
                 specimenSource: $scope.specimenSource,
                 equipment: $scope.equipment,
-                startDate: $scope.startDate?.toISOString(),
-                endDate: $scope.endDate?.toISOString(),
+                startDate: $scope.formatDateToYYMMDD($scope.startDate),
+                endDate: $scope.formatDateToYYMMDD($scope.endDate),
               };
               if (
                 $scope.reportDimensions?.startDate &&
@@ -473,8 +497,9 @@
                 testOrder: $scope.testOrder,
                 specimenSource: $scope.specimenSource,
                 equipment: $scope.equipment,
-                startDate: $scope.startDate?.toISOString(),
-                endDate: $scope.endDate?.toISOString(),
+                startDate: $scope.formatDateToYYMMDD($scope.startDate),
+                endDate: $scope.formatDateToYYMMDD($scope.endDate),
+                check: $scope.startDate,
               };
               if (
                 $scope.reportDimensions?.startDate &&
@@ -493,8 +518,8 @@
                 testOrder: $scope.testOrder,
                 specimenSource: $scope.specimenSource,
                 equipment: $scope.equipment,
-                startDate: $scope.startDate?.toISOString(),
-                endDate: $scope.endDate?.toISOString(),
+                startDate: $scope.formatDateToYYMMDD($scope.startDate),
+                endDate: $scope.formatDateToYYMMDD($scope.endDate),
               };
               if (
                 $scope.reportDimensions?.startDate &&
@@ -523,8 +548,8 @@
                 testOrder: $scope.testOrder,
                 specimenSource: $scope.specimenSource,
                 equipment: $scope.equipment,
-                startDate: $scope.startDate?.toISOString(),
-                endDate: $scope.endDate?.toISOString(),
+                startDate: $scope.formatDateToYYMMDD($scope.startDate),
+                endDate: $scope.formatDateToYYMMDD($scope.endDate),
               };
               if ($scope.startDate && $scope.endDate) {
                 $scope.loadData($scope.reportDimensions);
