@@ -27,6 +27,21 @@
         padding: 6px;
         border-radius: 4zpx;
       }
+
+      #report-app .details-container {
+        width: 100%;
+        display: flex !important;
+      }
+      #report-app .w-25 {
+        width: 25%;
+        border-right: solid 1px #eee;
+        padding: 16px;
+      }
+      #report-app .w-50 {
+        width: 50%;
+        border-right: solid 1px #eee;
+        padding: 16px;
+      }
     </style>
 
     <link
@@ -135,6 +150,7 @@
           "FactoryDefns",
           function ($scope, $http, $timeout, $q, FactoryDefns) {
             $scope.loading = false;
+            $scope.loaded = false;
             $scope.selectedFilterType = "other";
             $scope.departments = null;
             $scope.specimenSources = null;
@@ -160,6 +176,47 @@
               itemsPerPage: $scope.itemsPerPage,
             };
             $scope.maximumParametersCount = 1;
+            $scope.currentTest = null;
+
+            $scope.formatResults = (allocation) => {
+              return (
+                allocation?.results?.map((result) => {
+                  return {
+                    ...result,
+                    concept: allocation?.concept,
+                    authorizationStatuses: (
+                      allocation?.statuses?.filter(
+                        (status) =>
+                          status?.result?.uuid === result?.uuid &&
+                          status?.category === "RESULT_AUTHORIZATION"
+                      ) || []
+                    )?.map((authStatus) => {
+                      return {
+                        ...authStatus,
+                        user: {
+                          ...authStatus?.user,
+                          name: authStatus?.user?.display
+                            ? authStatus?.user?.display
+                            : authStatus?.user?.name,
+                        },
+                      };
+                    }),
+                    remarksStatuses:
+                      allocation?.statuses?.filter(
+                        (status) =>
+                          status?.result?.uuid === result?.uuid &&
+                          status?.category === "RESULT_REMARKS"
+                      ) || [],
+                    resultAmmendStatuses:
+                      allocation?.statuses?.filter(
+                        (status) =>
+                          status?.result?.uuid === result?.uuid &&
+                          status?.category === "RESULT_AMENDMENT"
+                      ) || [],
+                  };
+                }) || []
+              );
+            };
 
             $scope.loadData = (reportDimensions) => {
               $scope.loading = true;
@@ -181,11 +238,24 @@
                                 return {
                                   ...result,
                                   concept: allocation?.concept,
-                                  authorizationStatuses:
+                                  authorizationStatuses: (
                                     allocation?.statuses?.filter(
                                       (status) =>
-                                        status?.result?.uuid === result?.uuid
-                                    ) || [],
+                                        status?.result?.uuid === result?.uuid &&
+                                        status?.category ===
+                                          "RESULT_AUTHORIZATION"
+                                    ) || []
+                                  )?.map((authStatus) => {
+                                    return {
+                                      ...authStatus,
+                                      user: {
+                                        ...authStatus?.user,
+                                        name: authStatus?.user?.display
+                                          ? authStatus?.user?.display
+                                          : authStatus?.user?.name,
+                                      },
+                                    };
+                                  }),
                                 };
                               }) || []
                           ) || []
@@ -198,17 +268,96 @@
                           $scope.maximumParametersCount =
                             order?.testAllocations.length;
                         }
+                        const disposalStatus = (result?.statuses?.filter(
+                          (status) => status?.category === "DISPOSED"
+                        ) || [])[0];
+                        const acceptStatus = (result?.statuses?.filter(
+                          (status) => status?.category === "ACCEPTED"
+                        ) || [])[0];
+                        const printStatuses =
+                          result?.statuses?.filter(
+                            (status) => status?.category === "PRINT"
+                          ) || [];
+                        const transportTemperatureStatus =
+                          (result?.statuses?.filter(
+                            (status) =>
+                              status?.category === "TRANSPORT_TEMPERATURE"
+                          ) || [])[0];
+                        const disposeMethodStatus = (result?.statuses?.filter(
+                          (status) => status?.category === "DISPOSE_METHOD"
+                        ) || [])[0];
+                        const resultIntegrationStatus =
+                          (result?.statuses?.filter(
+                            (status) =>
+                              status?.category === "RESULTS_INTEGRATION"
+                          ) || [])[0];
+                        const conditionStatus = (result?.statuses?.filter(
+                          (status) => status?.category === "CONDITION"
+                        ) || [])[0];
+                        const resultStatus = (result?.statuses?.filter(
+                          (status) => status?.category === "HAS_RESULTS"
+                        ) || [])[0];
+                        const receivedOnStatus = (result?.statuses?.filter(
+                          (status) => status?.category === "RECEIVED_ON"
+                        ) || [])[0];
+                        const receivedByStatus = (result?.statuses?.filter(
+                          (status) => status?.category === "RECEIVED_BY"
+                        ) || [])[0];
+                        const collectedOnStatus = (result?.statuses?.filter(
+                          (status) => status?.category === "COLLECTED_ON"
+                        ) || [])[0];
+                        const collectedByStatus = (result?.statuses?.filter(
+                          (status) => status?.category === "COLLECTED_BY"
+                        ) || [])[0];
+                        const deliveredOnStatus = (result?.statuses?.filter(
+                          (status) => status?.category === "BROUGHT_ON"
+                        ) || [])[0];
+                        const deliveredByStatus = (result?.statuses?.filter(
+                          (status) => status?.category === "DELIVERED_BY"
+                        ) || [])[0];
+                        const rejectedAtLabStatus = (result?.statuses?.filter(
+                          (status) => status?.category === "REJECTED_LABORATORY"
+                        ) || [])[0];
+                        const rejectedAtRegStatus = (result?.statuses?.filter(
+                          (status) =>
+                            status?.category === "REJECTED_REGISTRATION"
+                        ) || [])[0];
+                        $scope.loaded = true;
                         return {
                           count: orderIndex === 0 ? index + 1 : null,
                           rowspan:
                             orderIndex === 0 ? result?.orders.length : null,
                           ...result,
+                          fileNo: result?.patient?.identifiers[0]?.id,
                           testOrder: order?.order,
-                          testAllocations: order?.testAllocations,
+                          testAllocations: order?.testAllocations?.map(
+                            (allocation) => {
+                              return {
+                                ...allocation,
+                                results: $scope.formatResults(allocation),
+                              };
+                            }
+                          ),
                           results: results,
                           priority: (result?.statuses?.filter(
                             (status) => status?.category === "PRIORITY"
                           ) || [])[0],
+                          disposalStatus,
+                          acceptStatus,
+                          printStatuses,
+                          transportTemperatureStatus,
+                          disposeMethodStatus,
+                          resultIntegrationStatus,
+                          conditionStatus,
+                          resultStatus,
+                          receivedOnStatus,
+                          receivedByStatus,
+                          collectedOnStatus,
+                          collectedByStatus,
+                          deliveredOnStatus,
+                          deliveredByStatus,
+                          rejectedAtLabStatus,
+                          rejectedAtRegStatus,
                           authorizationStatuses: result?.authorizationStatuses,
                         };
                       });
@@ -273,7 +422,7 @@
             };
 
             $scope.getResult = (results) => {
-              if (results.length === 0) {
+              if (!results?.length || results?.length === 0) {
                 return "-";
               }
 
@@ -375,6 +524,24 @@
               if ($scope.startDate && $scope.endDate) {
                 $scope.loadData($scope.reportDimensions);
               }
+            };
+
+            $scope.setCurrentTestOrder = (testOrder) => {
+              $scope.loaded = false;
+              setTimeout(() => {
+                if (
+                  !$scope.currentTest ||
+                  ($scope.currentTest?.concept?.uuid !=
+                    testOrder?.concept?.uuid &&
+                    $scope.currentTest?.label != testOrder.label)
+                ) {
+                  $scope.currentTest = testOrder;
+                } else {
+                  $scope.currentTest = null;
+                }
+                $scope.loaded = true;
+                $scope.$apply();
+              }, 10);
             };
 
             $scope.getSelectedFilterType = (selectedFilterType) => {
@@ -484,6 +651,7 @@
               <th>Department</th>
               <th>Specimen Source</th>
               <th>Lab No</th>
+              <th>File No</th>
               <th>Registered On</th>
               <th>Priority</th>
               <th>File No.</th>
@@ -497,14 +665,20 @@
               <td colspan="100%"></td>
             </tr>
           </thead>
-          <tbody ng-repeat="sampleTestOrder in samplesData.results">
-            <tr>
+          <tbody
+            ng-if="loaded"
+            ng-repeat="sampleTestOrder in samplesData.results"
+          >
+            <tr
+              style="cursor: pointer"
+              ng-click="setCurrentTestOrder(sampleTestOrder)"
+            >
               <td
                 style="width: 50px"
                 *ngIf="sampleTestOrder.count"
                 rowspan="{{sampleTestOrder.rowspan}}"
               >
-                {{sampleTestOrder.count}}
+                {{sampleTestOrder.count + (currentPage -1) * itemsPerPage}}
               </td>
               <td style="width: 120px">
                 {{sampleTestOrder.location.display ?
@@ -513,6 +687,7 @@
               <td>{{getDepertmentName(sampleTestOrder.concept.uuid)}}</td>
               <td>{{getSpecimenSourceName(sampleTestOrder.specimenSource)}}</td>
               <td>{{sampleTestOrder.label}}</td>
+              <td>{{sampleTestOrder.fileNo}}</td>
               <td>{{sampleTestOrder.dateTimeCreated | date:"medium" }}</td>
               <td>{{sampleTestOrder.priority.remarks}}</td>
               <td>{{sampleTestOrder.patient.identifiers[0].id}}</td>
@@ -534,6 +709,117 @@
                 <p style="text-align: center">
                   <b> {{ getResult(testAllocation.results)}} </b>
                 </p>
+              </td>
+            </tr>
+            <tr>
+              <td
+                colspan="100%"
+                ng-if="currentTest && currentTest.label ==sampleTestOrder.label && currentTest.concept.uuid === sampleTestOrder.concept.uuid"
+              >
+                <div class="details-container">
+                  <div class="w-25">
+                    <p>
+                      Names:
+                      <b
+                        >{{sampleTestOrder.patient.givenName}}
+                        {{sampleTestOrder.patient.familyName2}}
+                        {{sampleTestOrder.patient.familyName}}</b
+                      >
+                    </p>
+                    <p>Age: <b> {{sampleTestOrder.patient.age}} </b></p>
+                    <p>Gender: <b> {{sampleTestOrder.patient.gender}} </b></p>
+                  </div>
+                  <div class="w-25">
+                    <p ng-if="sampleTestOrder.acceptStatus">
+                      Accepted by
+                      <b>{{sampleTestOrder.acceptStatus.user.name}}</b> on
+                      <b>
+                        {{sampleTestOrder.acceptStatus.timestamp |
+                        date:'medium'}}
+                      </b>
+                    </p>
+
+                    <div
+                      style="margin-top: 8px"
+                      ng-if="sampleTestOrder.printStatuses.length > 0"
+                    >
+                      <p
+                        ng-repeat="printStatus in sampleTestOrder.printStatuses"
+                      >
+                        Printed by <b> {{printStatus.user.name}} </b> on
+                        <b> {{printStatus.timestamp | date:'medium'}} </b>
+                      </p>
+                    </div>
+                  </div>
+                  <div class="w-50">
+                    <div style="width: 100%; overflow: auto">
+                      <table class="table table-bordered">
+                        <thead>
+                          <tr>
+                            <th>Parameter</th>
+                            <th>Results</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr
+                            ng-repeat="testAllocation in sampleTestOrder.testAllocations"
+                          >
+                            <td>{{testAllocation.concept.display}}</td>
+                            <td>
+                              <p>
+                                Final Result:
+                                <b> {{ getResult(testAllocation.results)}} </b>
+                              </p>
+                              <div style="width: 100%; overflow: auto">
+                                <table class="table table-bordered">
+                                  <tr>
+                                    <th>Result</th>
+                                    <th>Fed By</th>
+                                    <th>Fed On</th>
+                                    <th>Authorized By</th>
+                                    <th>Authorized By</th>
+                                    <th>Machine</th>
+                                  </tr>
+                                  <tr
+                                    ng-repeat="result in testAllocation.results"
+                                  >
+                                    <td>
+                                      {{result.valueCoded ?
+                                      result.valueCoded.display :
+                                      result.valueText ? result.valueText:
+                                      result.valueNumeric ? result.valueNumeric:
+                                      ""}}
+                                    </td>
+                                    <td>{{result.creator.display}}</td>
+                                    <td>
+                                      {{result.dateCreated | date:'medium'}}
+                                    </td>
+                                    <td>
+                                      {{ result.authorizationStatuses.length > 0
+                                      ?
+                                      (result.authorizationStatuses[result.authorizationStatuses.length
+                                      -1].user.name): ""}}
+                                    </td>
+                                    <td>
+                                      {{ result.authorizationStatuses.length > 0
+                                      ?
+                                      (result.authorizationStatuses[result.authorizationStatuses.length
+                                      -1].timestamp | date:'medium'): ""}}
+                                    </td>
+                                    <td>
+                                      {{result.instrument ?
+                                      result.instrument.display: ''}}
+                                    </td>
+                                  </tr>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
               </td>
             </tr>
           </tbody>
