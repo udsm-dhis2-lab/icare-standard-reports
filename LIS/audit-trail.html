@@ -402,7 +402,7 @@
 
             $scope.getDepertmentName = (department) => {
               return department?.display
-                ? department?.display.replace("SPECIMEN_SOURCE:", "")
+                ? department?.display?.replace("LAB_DEPARTMENT:", "")
                 : "-";
             };
 
@@ -412,7 +412,7 @@
 
             $scope.getSpecimenSourceName = (specimenSource) => {
               return specimenSource?.display
-                ? specimenSource?.display.replace("SPECIMEN_SOURCE:", "")
+                ? specimenSource?.display?.replace("SPECIMEN_SOURCE:", "")
                 : "-";
             };
 
