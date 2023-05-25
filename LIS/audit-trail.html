@@ -190,9 +190,7 @@
                     concept: allocation?.concept,
                     authorizationStatuses: (
                       allocation?.statuses?.filter(
-                        (status) =>
-                          status?.result?.uuid === result?.uuid &&
-                          status?.category === "RESULT_AUTHORIZATION"
+                        (status) => status?.category === "RESULT_AUTHORIZATION"
                       ) || []
                     )?.map((authStatus) => {
                       return {
@@ -245,9 +243,8 @@
                                   authorizationStatuses: (
                                     allocation?.statuses?.filter(
                                       (status) =>
-                                        status?.result?.uuid === result?.uuid &&
                                         status?.category ===
-                                          "RESULT_AUTHORIZATION"
+                                        "RESULT_AUTHORIZATION"
                                     ) || []
                                   )?.map((authStatus) => {
                                     return {
@@ -327,6 +324,11 @@
                             status?.category === "REJECTED_REGISTRATION"
                         ) || [])[0];
                         $scope.loaded = true;
+                        const authorizationStatuses =
+                          result?.statuses?.filter(
+                            (status) =>
+                              status?.category === "RESULT_AUTHORIZATION"
+                          ) || [];
                         return {
                           count: orderIndex === 0 ? index + 1 : null,
                           rowspan:
@@ -362,7 +364,7 @@
                           deliveredByStatus,
                           rejectedAtLabStatus,
                           rejectedAtRegStatus,
-                          authorizationStatuses: result?.authorizationStatuses,
+                          authorizationStatuses,
                         };
                       });
                     })
@@ -689,7 +691,7 @@
               <th>Has Results?</th>
               <th>Authorized?</th>
               <th>Authorized On</th>
-              <th colspan="{{maximumParametersCount}}">Test Parameters</th>
+              <!-- <th colspan="{{maximumParametersCount}}">Test Parameters</th> -->
             </tr>
             <tr ng-if="currenSample">
               <td colspan="100%"></td>
@@ -729,17 +731,17 @@
                 {{sampleTestOrder.authorizationStatuses.length > 0 ? "Y": "N"}}
               </td>
               <td>
-                {{ authorizationStatuses ?
+                {{ sampleTestOrder.authorizationStatuses ?
                 (getAuthorizationStatus(sampleTestOrder.authorizationStatuses) ?
                 (getAuthorizationStatus(sampleTestOrder.authorizationStatuses).timestamp
                 | date:"medium"):"-"): "-"}}
               </td>
-              <td ng-repeat="testAllocation in sampleTestOrder.testAllocations">
+              <!-- <td ng-repeat="testAllocation in sampleTestOrder.testAllocations">
                 <p>{{testAllocation.concept.display}}</p>
                 <p style="text-align: center">
                   <b> {{ getResult(testAllocation.results)}} </b>
                 </p>
-              </td>
+              </td> -->
             </tr>
             <tr>
               <td
