@@ -797,9 +797,11 @@
                     },
                     title: {
                       text:
-                        categoryToView === "row"
+                        (categoryToView === "row"
                           ? "Total counts by tests"
-                          : "Total Tests by period",
+                          : "Total Tests by period") +
+                        " " +
+                        $scope.selectedPeriod?.name,
                     },
                     xAxis: {
                       categories: ["-"],
@@ -901,6 +903,7 @@
   <body>
     <div id="report-app" ng-app="reportModule" ng-controller="reportController">
       <h3 class="text-center">Analysis Counts by Statuses</h3>
+      <h4 class="text-center">{{selectedPeriod.name}}</h4>
       <div class="selections-multiple-lis">
         <div class="wrapper">
           <div
