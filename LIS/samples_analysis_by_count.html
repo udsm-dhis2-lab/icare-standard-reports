@@ -388,24 +388,24 @@
                   uuid: "e9233c60-39c6-451a-ba06-2193ebc949ff",
                 },
                 referred: {},
-              
-              rejected: {
+
+                rejected: {
                   name: "",
                   uuid: "9118ce95-f60b-459f-abfc-1ee46d5b36dc",
                 },
-              "not-reviewed": {
+                "not-reviewed": {
                   name: "",
                   uuid: "9192baf4-571f-4455-b2bb-a7ab876e4092",
                 },
-              reviewed: {
+                reviewed: {
                   name: "",
                   uuid: "ad2c825a-f7a1-4e33-9b2e-54587a376d57",
                 },
-              "not-resulted": {
+                "not-resulted": {
                   name: "",
                   uuid: "9eeba063-2d43-4c36-9c38-6471f4f14d40",
-                }, 
-              }     
+                },
+              },
             };
             $scope.dataRowsByTest = {};
             $scope.testOrders = [];
@@ -611,6 +611,7 @@
                 $scope.selectedPeriod
               ) {
                 $scope.loading = true;
+                let grandTotal = 0;
                 for (const selectedTest of $scope.selectedItems) {
                   if (
                     $scope.dataSetsReference[$scope.analysisType][
@@ -633,6 +634,34 @@
                         ...selectedTest,
                         dataRow: response?.rows[0],
                       };
+
+                      // console.log($scope.analysisType);
+                      if ($scope.analysisType === "by-month") {
+                        let rowTotal = 0;
+                        Object.keys(response?.rows[0]).forEach((key) => {
+                          if (key !== "DAY") {
+                            rowTotal =
+                              rowTotal + Number(response?.rows[0][key]);
+                          }
+                        });
+                        let rowTotalData = {};
+                        $scope.dataRowsByTest[selectedTest?.uuid + "-total"] =
+                          rowTotal;
+
+                        grandTotal = grandTotal + rowTotal;
+                        $scope.dataRowsByTest["Jumla_Kuu"] = grandTotal;
+                      }
+
+                      Object.keys(response?.rows[0]).forEach((key) => {
+                        if (key !== "Mwezi" && key !== "DAY") {
+                          $scope.dataRowsByTest[key] = $scope.dataRowsByTest[
+                            key
+                          ]
+                            ? Number($scope.dataRowsByTest[key]) +
+                              Number(response?.rows[0][key])
+                            : Number(response?.rows[0][key]);
+                        }
+                      });
                       $scope.loading = false;
                       $scope.$apply();
                     });
@@ -687,15 +716,45 @@
               $scope.loadData($scope.reportDimensions);
             };
 
+            $scope.getColumTotal = (dataRowsByTest, selectedItems, header) => {
+              let total = 0;
+              for (const testOrder of selectedItems) {
+                if (Number(dataRowsByTest[testOrder.uuid].dataRow[header.id])) {
+                  total =
+                    total +
+                    Number(dataRowsByTest[testOrder.uuid].dataRow[header.id]);
+                }
+              }
+              return total;
+            };
+            $scope.getOverallTotal = (
+              dataRowsByTest,
+              selectedItems,
+              headers
+            ) => {
+              let total = 0;
+              for (const testOrder of selectedItems) {
+                for (const header of headers) {
+                  if (
+                    Number(dataRowsByTest[testOrder.uuid].dataRow[header.id])
+                  ) {
+                    total =
+                      total +
+                      Number(dataRowsByTest[testOrder.uuid].dataRow[header.id]);
+                  }
+                }
+              }
+              $scope.$apply();
+              return total;
+            };
+
             $scope.onChangeYear = (selectedYear, action) => {
               $scope.selectedYear =
                 action == "prev" ? selectedYear - 1 : selectedYear + 1;
-              console.log($scope.selectedYear);
               $scope.generatePeriods(
                 $scope.selectedYear,
                 $scope.analysisType === "by-year" ? "yearly" : "monthly"
               );
-              console.log($scope.periods);
             };
 
             $scope.getTestOrders = () => {
@@ -888,11 +947,12 @@
 
       <div style="width: 100%; overflow: auto; margin-top: 16px">
         <table class="table table-bordered" ng-if="!loading && selectedPeriod">
-          <thead style="background-color: #eee; color: #222">
+          <thead style="background-color: #2e8180; color: #fff">
             <tr>
               <th style="width: 20px">SN</th>
               <th>Test</th>
               <th ng-repeat="header in reportHeaders">{{header.name}}</th>
+              <th>Total</th>
             </tr>
           </thead>
           <tbody ng-if="!message && reportHeaders.length > 0">
@@ -902,6 +962,14 @@
               <td ng-repeat="header in reportHeaders">
                 {{dataRowsByTest[selectedTest.uuid].dataRow[header.id]}}
               </td>
+              <td>{{dataRowsByTest[selectedTest.uuid + "-total"]}}</td>
+            </tr>
+            <tr>
+              <td colspan="2">TOTAL</td>
+              <td ng-repeat="header in reportHeaders">
+                {{ dataRowsByTest[header.id] }}
+              </td>
+              <td>{{dataRowsByTest['Jumla_Kuu']}}</td>
             </tr>
           </tbody>
         </table>
