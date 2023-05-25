@@ -166,6 +166,10 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     ></script>
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/data.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script type="text/javascript">
       angular
         .module("reportModule", [])
@@ -336,6 +340,7 @@
 
             $scope.currentUser = null;
             $scope.loading = false;
+            $scope.showChart = false;
             $scope.analysisType = "by-year";
             $scope.analysisCategory = "all";
             $scope.searchingText = null;
@@ -408,6 +413,7 @@
               },
             };
             $scope.dataRowsByTest = {};
+            $scope.dataForChart = [];
             $scope.testOrders = [];
             $scope.showMultipleSelection = true;
             $scope.selectedItems = [];
@@ -636,21 +642,24 @@
                       };
 
                       // console.log($scope.analysisType);
-                      if ($scope.analysisType === "by-month") {
-                        let rowTotal = 0;
-                        Object.keys(response?.rows[0]).forEach((key) => {
-                          if (key !== "DAY") {
-                            rowTotal =
-                              rowTotal + Number(response?.rows[0][key]);
-                          }
-                        });
-                        let rowTotalData = {};
-                        $scope.dataRowsByTest[selectedTest?.uuid + "-total"] =
-                          rowTotal;
+                      // if ($scope.analysisType === "by-month") {
+                      let rowTotal = 0;
+                      Object.keys(response?.rows[0]).forEach((key) => {
+                        if (
+                          key !== "DAY" &&
+                          key !== "Jumla_Kuu" &&
+                          key !== "Mwezi"
+                        ) {
+                          rowTotal = rowTotal + Number(response?.rows[0][key]);
+                        }
+                      });
+                      let rowTotalData = {};
+                      $scope.dataRowsByTest[selectedTest?.uuid + "-total"] =
+                        rowTotal;
 
-                        grandTotal = grandTotal + rowTotal;
-                        $scope.dataRowsByTest["Jumla_Kuu"] = grandTotal;
-                      }
+                      grandTotal = grandTotal + rowTotal;
+                      $scope.dataRowsByTest["Jumla_Kuu"] = grandTotal;
+                      // }
 
                       Object.keys(response?.rows[0]).forEach((key) => {
                         if (key !== "Mwezi" && key !== "DAY") {
@@ -726,6 +735,86 @@
                 }
               }
               return total;
+            };
+
+            $scope.toggleChart = (data, selectedItems) => {
+              $scope.dataForChart = [];
+              for (const testOrder of selectedItems) {
+                Object.keys(data).forEach((key) => {
+                  if (key.indexOf(testOrder?.uuid + "-total") > -1) {
+                    $scope.dataForChart = [
+                      ...$scope.dataForChart,
+                      {
+                        name: testOrder?.display,
+                        data: [data[key]],
+                      },
+                    ];
+                  }
+                });
+              }
+              $scope.showChart = !$scope.showChart;
+              if ($scope.showChart) {
+                setTimeout(() => {
+                  Highcharts.chart("chart-column", {
+                    // colors: ['#2e8180', '#3498db','#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'],
+                    chart: {
+                      type: "column",
+                      style: {
+                        fontSize: "11px", // Define the font size for the whole chart
+                      },
+                    },
+                    title: {
+                      text: "Total counts by tests",
+                    },
+                    xAxis: {
+                      categories: $scope.selectedItems?.map(
+                        (item) => item.display
+                      ),
+                      crosshair: true,
+                    },
+                    yAxis: {
+                      min: 0,
+                      title: {
+                        text: "Data",
+                      },
+                      stackLabels: {
+                        enabled: true,
+                        style: {
+                          fontWeight: "normal",
+                          color: "black",
+                        },
+                      },
+                    },
+                    tooltip: {
+                      headerFormat: "<b>{point.x}</b><br/>",
+                      pointFormat:
+                        "{series.name}: {point.y}<br/>Total: {point.stackTotal}",
+                      footerFormat: "</table>",
+                      shared: true,
+                      useHTML: true,
+                    },
+                    plotOptions: {
+                      column: {
+                        dataLabels: {
+                          enabled: true,
+                          color:
+                            (Highcharts.theme &&
+                              Highcharts.theme.dataLabelsColor) ||
+                            "#222",
+                        },
+                      },
+                    },
+                    legend: {
+                      floating: false,
+                      itemStyle: {
+                        whiteSpace: "wrap",
+                        textOverflow: "ellipsis",
+                      },
+                    },
+                    series: $scope.dataForChart,
+                  });
+                }, 10);
+              }
             };
             $scope.getOverallTotal = (
               dataRowsByTest,
@@ -952,7 +1041,14 @@
               <th style="width: 20px">SN</th>
               <th>Test</th>
               <th ng-repeat="header in reportHeaders">{{header.name}}</th>
-              <th>Total</th>
+              <th>
+                TOTAL
+                <input
+                  style="margin-left: 8px"
+                  type="checkbox"
+                  ng-click="toggleChart(dataRowsByTest,selectedItems)"
+                />Chart
+              </th>
             </tr>
           </thead>
           <tbody ng-if="!message && reportHeaders.length > 0">
@@ -974,6 +1070,10 @@
           </tbody>
         </table>
         <div style="width: 100%">{{message}}</div>
+
+        <div style="margin-top: 32px" id="chart-column" ng-if="showChart">
+          CHART
+        </div>
         <div
           ng-if="loading && selectedPeriod"
           style="
