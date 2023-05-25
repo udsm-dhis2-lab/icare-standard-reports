@@ -340,7 +340,10 @@
 
             $scope.currentUser = null;
             $scope.loading = false;
-            $scope.showChart = false;
+            $scope.showChart = {
+              row: false,
+              column: false,
+            };
             $scope.analysisType = "by-year";
             $scope.analysisCategory = "all";
             $scope.searchingText = null;
@@ -419,6 +422,7 @@
             $scope.selectedItems = [];
             $scope.keyedSelectedTestOrders = {};
             $scope.datasetUuids = [];
+            $scope.columnTotalKeys = [];
             // console.log($scope.reportDimensions);
             $scope.onSetReportType = function (type) {
               $scope.analysisType = type;
@@ -435,6 +439,10 @@
             };
 
             $scope.loadData = function (reportDimensions) {
+              $scope.showChart = {
+                row: false,
+                column: false,
+              };
               if ($scope.analysisType == "by-year") {
                 $scope.reportHeaders = [
                   {
@@ -661,6 +669,15 @@
                       $scope.dataRowsByTest["Jumla_Kuu"] = grandTotal;
                       // }
 
+                      $scope.columnTotalKeys = Object.keys(
+                        response?.rows[0]
+                      )?.filter(
+                        (key) =>
+                          key !== "DAY" &&
+                          key !== "Jumla_Kuu" &&
+                          key !== "Mwezi"
+                      );
+
                       Object.keys(response?.rows[0]).forEach((key) => {
                         if (key !== "Mwezi" && key !== "DAY") {
                           $scope.dataRowsByTest[key] = $scope.dataRowsByTest[
@@ -737,25 +754,39 @@
               return total;
             };
 
-            $scope.toggleChart = (data, selectedItems) => {
+            $scope.toggleChart = (data, selectedItems, categoryToView) => {
               $scope.dataForChart = [];
-              for (const testOrder of selectedItems) {
-                Object.keys(data).forEach((key) => {
-                  if (key.indexOf(testOrder?.uuid + "-total") > -1) {
-                    $scope.dataForChart = [
-                      ...$scope.dataForChart,
-                      {
-                        name: testOrder?.display,
-                        data: [data[key]],
-                      },
-                    ];
-                  }
+              if (categoryToView === "row") {
+                for (const testOrder of selectedItems) {
+                  Object.keys(data).forEach((key) => {
+                    if (key.indexOf(testOrder?.uuid + "-total") > -1) {
+                      $scope.dataForChart = [
+                        ...$scope.dataForChart,
+                        {
+                          name: testOrder?.display,
+                          data: [data[key]],
+                        },
+                      ];
+                    }
+                  });
+                }
+              } else {
+                $scope.columnTotalKeys.forEach((key) => {
+                  $scope.dataForChart = [
+                    ...$scope.dataForChart,
+                    {
+                      name: key,
+                      data: [data[key]],
+                    },
+                  ];
                 });
               }
-              $scope.showChart = !$scope.showChart;
-              if ($scope.showChart) {
+
+              $scope.showChart[categoryToView] =
+                !$scope.showChart[categoryToView];
+              if ($scope.showChart[categoryToView]) {
                 setTimeout(() => {
-                  Highcharts.chart("chart-column", {
+                  Highcharts.chart("chart-column-" + categoryToView, {
                     // colors: ['#2e8180', '#3498db','#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'],
                     chart: {
                       type: "column",
@@ -764,12 +795,13 @@
                       },
                     },
                     title: {
-                      text: "Total counts by tests",
+                      text:
+                        categoryToView === "row"
+                          ? "Total counts by tests"
+                          : "Total Tests by period",
                     },
                     xAxis: {
-                      categories: $scope.selectedItems?.map(
-                        (item) => item.display
-                      ),
+                      categories: ["-"],
                       crosshair: true,
                     },
                     yAxis: {
@@ -1046,7 +1078,7 @@
                 <input
                   style="margin-left: 8px"
                   type="checkbox"
-                  ng-click="toggleChart(dataRowsByTest,selectedItems)"
+                  ng-click="toggleChart(dataRowsByTest,selectedItems, 'row')"
                 />Chart
               </th>
             </tr>
@@ -1061,7 +1093,13 @@
               <td>{{dataRowsByTest[selectedTest.uuid + "-total"]}}</td>
             </tr>
             <tr>
-              <td colspan="2">TOTAL</td>
+              <td colspan="2">
+                TOTAL<input
+                  style="margin-left: 8px"
+                  type="checkbox"
+                  ng-click="toggleChart(dataRowsByTest,selectedItems, 'column')"
+                />Chart
+              </td>
               <td ng-repeat="header in reportHeaders">
                 {{ dataRowsByTest[header.id] }}
               </td>
@@ -1071,9 +1109,16 @@
         </table>
         <div style="width: 100%">{{message}}</div>
 
-        <div style="margin-top: 32px" id="chart-column" ng-if="showChart">
-          CHART
-        </div>
+        <div
+          style="margin-top: 32px"
+          id="chart-column-row"
+          ng-if="showChart['row']"
+        ></div>
+        <div
+          style="margin-top: 32px"
+          id="chart-column-column"
+          ng-if="showChart['column']"
+        ></div>
         <div
           ng-if="loading && selectedPeriod"
           style="
