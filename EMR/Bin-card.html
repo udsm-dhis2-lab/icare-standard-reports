@@ -209,20 +209,34 @@
             },
             getStockableItems: async (q) => {
               return await $http
-                .get(`../../../openmrs/ws/rest/v1/icare/item?stockable=true${
-                q ? "&q=" + q : ""
-              }`)
+                .get(
+                  `../../../openmrs/ws/rest/v1/icare/item?stockable=true${
+                    q ? "&q=" + q : ""
+                  }`
+                )
                 .then((response) => {
                   return response.data;
                 });
             },
-            getData: async function (period, dataSetUuid, itemUuid, locationUuid) {
-              if (!period || !dataSetUuid || !itemUuid || !locationUuid) {
+            getData: async (
+              startDate,
+              endDate,
+              dataSetUuid,
+              itemUuid,
+              locationUuid
+            ) => {
+              if (
+                !startDate ||
+                !endDate ||
+                !dataSetUuid ||
+                !itemUuid ||
+                !locationUuid
+              ) {
                 return null;
               }
               return await $http
                 .get(
-                  `../../../openmrs/ws/rest/v1/reportingrest/dataSet/${dataSetUuid}?startDate=${period?.startDate}&endDate=${period?.endDate}&itemUuid=${itemUuid}&locationUuid=${locationUuid}`
+                  `../../../openmrs/ws/rest/v1/reportingrest/dataSet/${dataSetUuid}?startDate=${startDate}&endDate=${endDate}&itemUuid=${itemUuid}&locationUuid=${locationUuid}`
                 )
                 .then((response) => {
                   return response.data;
@@ -240,11 +254,14 @@
             $scope.currentYear = new Date().getFullYear();
             $scope.selectedYear = $scope.currentYear;
             $scope.currentUser = null;
+            $scope.today = new Date();
+            $scope.startDate;
+            $scope.endDate;
             $scope.loadedFilters = false;
             $scope.dataSetUuid = "b78dec33-faeb-4e32-aacb-0d1863f07b51";
-            $scope.loading = true;
+            $scope.loading = false;
             $scope.loaded = false;
-            $scope.reportData = [];
+            $scope.dataRows = [];
             $scope.stockableItems = [];
             $scope.storeLocations = [];
             $scope.selectedLocation;
@@ -252,11 +269,6 @@
             $scope.selectedItems = [];
 
             $scope.showMultipleSelectionItem = false;
-
-            $scope.reportDimensions = {
-              periods: [],
-              allData: {},
-            };
 
             FactoryDefns.getStoreLocations().then((locationsResponse) => {
               FactoryDefns.getStockableItems().then(
@@ -277,6 +289,10 @@
               );
             });
 
+            $scope.updateItems = () => {
+              $scope.showMultipleSelectionItem = false;
+            };
+
             $scope.getSelectedLocation = (event, location) => {
               $scope.selectedLocation = location;
             };
@@ -286,17 +302,18 @@
               $scope.getStockableItems();
             };
 
-            
             $scope.getStockableItems = () => {
-            FactoryDefns.getStockableItems($scope.searchingText).then((response) => {
-            $scope.stockableItems = response?.results.map((result) => {
-              return {
-                ...result
-              };
-            });
-            $scope.$apply();
-            });
-             };
+              FactoryDefns.getStockableItems($scope.searchingText).then(
+                (response) => {
+                  $scope.stockableItems = response?.results.map((result) => {
+                    return {
+                      ...result,
+                    };
+                  });
+                  $scope.$apply();
+                }
+              );
+            };
 
             $scope.getSelectedItem = (event, itemToSelect) => {
               $scope.stockableItems = [
@@ -329,28 +346,50 @@
               );
             };
 
-            $scope.loadData = () => {
-
-            $scope.dataRows = [];
-            $scope.selectedItems?.forEach((item) => {
-            FactoryDefns.getData(
-              $scope.reportDimensions,
-              datasetUuid,
-              item?.uuid,
-              $scope.selectedLocation?.uuid
-              
-            ).then((response) => {
-              console.log(response)
-              const responseRows = response?.rows?.map((row, index) => {
-                
+            $scope.loadData = (startDate, endDate) => {
+              $scope.dataRows = [];
+              $scope.loading = true;
+              $scope.loaded = false;
+              $scope.startDate = $scope.formatDateToYYMMDD(startDate);
+              $scope.endDate = $scope.formatDateToYYMMDD(endDate);
+              $scope.selectedItems?.forEach((item) => {
+                FactoryDefns.getData(
+                  $scope.startDate,
+                  $scope.endDate,
+                  $scope.dataSetUuid,
+                  item?.uuid,
+                  $scope.selectedLocation?.uuid
+                ).then((response) => {
+                  $scope.dataRows = response?.rows;
+                  $scope.loading = false;
+                  $scope.loaded = true;
+                  $scope.$apply();
+                });
               });
-              $scope.dataRows = [...$scope.dataRows, ...responseRows];
-              $scope.loading = false;
-              $scope.$apply();
-              });
-            });
+            };
 
-              
+            $scope.formatDateToYYMMDD = (dateValue, reverse) => {
+              return reverse
+                ? $scope.formatMonthOrDate(dateValue.getDate(), "d") +
+                    "-" +
+                    $scope.formatMonthOrDate(dateValue.getMonth() + 1, "m") +
+                    "-" +
+                    dateValue.getFullYear()
+                : dateValue.getFullYear() +
+                    "-" +
+                    $scope.formatMonthOrDate(dateValue.getMonth() + 1, "m") +
+                    "-" +
+                    $scope.formatMonthOrDate(dateValue.getDate(), "d");
+            };
+
+            $scope.formatMonthOrDate = (value, type) => {
+              if (type == "m" && value.toString().length == 1) {
+                return "0" + value;
+              } else if (type == "d" && value.toString().length == 1) {
+                return "0" + value;
+              } else {
+                return value;
+              }
             };
           },
         ]);
@@ -435,8 +474,8 @@
                     <button
                       class="btn btn-primary"
                       style="float: right"
-                      ng-disabled="selectedPeriods.length ==0"
-                      ng-click="loadData()"
+                      ng-disabled="selectedItems.length ==0"
+                      ng-click="updateItems()"
                     >
                       Update
                     </button>
@@ -445,6 +484,34 @@
               </table>
             </div>
           </div>
+        </div>
+        <div style="width: 40%">
+          <span>
+            StartDate:
+            <input
+              class="date-input"
+              ng-model="startDate"
+              max="{{today}}"
+              placeholder="Start date"
+              type="date"
+            />
+          </span>
+          <span style="margin-left: 8px">
+            End Date:
+            <input
+              class="date-input"
+              ng-model="endDate"
+              placeholder="End date"
+              type="date"
+            />
+          </span>
+          <button
+            ng-disabled="!startDate || !endDate || selectedItems?.length === 0"
+            style="margin-left: 8px"
+            ng-click="loadData(startDate, endDate)"
+          >
+            Update
+          </button>
         </div>
       </div>
       <div style="width: 100%; overflow: auto; margin-top: 16px">
@@ -461,22 +528,20 @@
               <th>Balance</th>
               <th>Remarks</th>
               <th>Initials</th>
-              
             </tr>
           </thead>
           <tbody>
             <tr ng-repeat="dataRow in dataRows;">
               <td>{{$index+1}}</td>
-              <td>{{dataRow.date}}</td>
+              <td>{{dataRow.date | date:"medium"}}</td>
               <td>{{dataRow.ref_no}}</td>
               <td>{{dataRow.from_to}}</td>
               <td>{{dataRow.qty_received}}</td>
               <td>{{dataRow.qty_issued}}</td>
-              <td>{{dataRow.expiry_date}}</td>
+              <td>{{dataRow.expiry_date | date:"medium"}}</td>
               <td>{{dataRow.balance}}</td>
               <td>{{dataRow.remarks}}</td>
               <td>{{dataRow.initials}}</td>
-              
             </tr>
           </tbody>
         </table>
