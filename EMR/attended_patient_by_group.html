@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <style>
+      #report-app .loader-section {
+        padding: 5rem;
+        text-align: center;
+        background-color: #f2f2f2;
+        margin-top: 10px;
+        margin-bottom: 20px;
+      }
+
+      #report-app .spaced {
+        margin-top: 5rem;
+      }
+      #report-app table {
+        border-collapse: collapse;
+      }
+      #report-app table,
+      #report-app th,
+      #report-app td {
+        border: 1px solid #c0c0c0;
+      }
+      #report-app th {
+        text-align: center;
+      }
+      #report-app td,
+      #report-app th {
+        height: 25px;
+        padding: 6px;
+        margin: 10px;
+      }
+
+      #report-app .loader {
+        border: 16px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 16px solid #3498db;
+        width: 120px;
+        height: 120px;
+        -webkit-animation: spin 2s linear infinite; /* Safari */
+        animation: spin 2s linear infinite;
+      }
+
+      /* Safari */
+      @-webkit-keyframes spin {
+        0% {
+          -webkit-transform: rotate(0deg);
+        }
+        100% {
+          -webkit-transform: rotate(360deg);
+        }
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css"
+    />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"
+      integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script type="text/javascript">
+      angular
+        .module("reportModule", [])
+        .factory("FactoryDefns", function ($window, $http) {
+          var uri = "data:application/vnd.ms-excel;base64,",
+            template =
+              '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table border="1">{table}</table><br /><table border="1">{table}</table></body></html>',
+            base64 = function (s) {
+              return $window.btoa(unescape(encodeURIComponent(s)));
+            },
+            format = function (s, c) {
+              return s.replace(/{(\w+)}/g, function (m, p) {
+                return c[p];
+              });
+            };
+          return {
+            tableToExcel: function () {
+              var tables = $(
+                ".pop-table, .maternal-table, .cchp-table, .opd-table, .ipd-table, .death-table, .notifiable-table, .tracer-table"
+              );
+              var ctx = { worksheet: "Sheet 1" };
+              var str =
+                '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>';
+
+              tables.each(function (index) {
+                $(this)
+                  .find("td.hidden")
+                  .each(function (index2) {
+                    this.remove();
+                  });
+                ctx["table" + index] = this.innerHTML;
+                if (this.title == "no-border") {
+                  str += "<table>{" + "table" + index + "}</table><br />";
+                } else {
+                  str +=
+                    '<table border="1">{' + "table" + index + "}</table><br />";
+                }
+              });
+              str += "</body></html>";
+              var href = uri + base64(format(str, ctx));
+              return href;
+            },
+            getData: async function (reportDimensions) {
+              if (!reportDimensions) {
+                return null;
+              }
+              return await $http
+                .get(
+                  `../../../openmrs/ws/rest/v1/reportingrest/dataSet/${reportDimensions?.dataSetUuid}?startDate=${reportDimensions?.startDate}&endDate=${reportDimensions?.endDate}`
+                )
+                .then((response) => {
+                  return response.data;
+                });
+            },
+          };
+        })
+        .controller("reportController", [
+          "$scope",
+          "$http",
+          "$timeout",
+          "$q",
+          "FactoryDefns",
+          function ($scope, $http, $timeout, $q, FactoryDefns) {
+            $scope.currentUser = null;
+            $scope.loading = false;
+            $scope.reasonsHeaders = [];
+            $scope.reportDimensions = {
+              startDate: window["iReportsDimensions"]
+                ? window["iReportsDimensions"]?.startDate
+                : "2022-11-22",
+              endDate: window["iReportsDimensions"]
+                ? window["iReportsDimensions"]?.endDate
+                : new Date().getFullYear().toString() +
+                  "-" +
+                  new Date().getMonth() +
+                  1 +
+                  "-" +
+                  new Date().getDate(),
+              dataSetUuid: "3af676a5-aaa3-49ef-94d1-e38933e90d57",
+            };
+            $scope.dataRows = [];
+            $scope.maxRejectionReasons = 1;
+            $scope.loading = true;
+            FactoryDefns.getData($scope.reportDimensions).then((response) => {
+              const responseRows = response?.rows;
+              $scope.dataRows = responseRows?.map((row, index) => {
+                return {
+                    ...row
+                }
+              })
+              
+
+              $scope.loading = false;
+              $scope.$apply();
+            });
+          },
+        ]);
+    </script>
+  </head>
+  <body>
+    <div id="report-app" ng-app="reportModule" ng-controller="reportController">
+      <h3 class="text-center">Attended Patients By Group</h3>
+      <div style="width: 100%; overflow: auto; margin-top: 16px">
+        <table class="table table-bordered" ng-if="!loading">
+          <thead style="background-color: #2e8180; color: #fff">
+            <tr>
+              <th>AINA YA MGONJWA</th>
+              <th>ME</th>
+              <th>KE</th>
+              <th>TOTAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="dataRow in dataRows;">
+              <td>{{dataRow.mgonjwa}}</td>
+              <td>{{dataRow.ke}}</td>
+              <td>{{dataRow.me}}</td>
+              <td>{{dataRow.jumla}}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div
+          ng-if="loading"
+          style="
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "
+        >
+          <div class="loader"></div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
