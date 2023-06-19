@@ -183,7 +183,7 @@
   </head>
   <body>
     <div id="report-app" ng-app="reportModule" ng-controller="reportController">
-      <h3 class="text-center">Turn Around Time</h3>
+      <h3 class="text-center">Turn Around Time in minutes</h3>
       <div style="width: 100%; overflow: auto; margin-top: 16px">
         <table class="table table-bordered" ng-if="!loading">
           <thead style="background-color: #2e8180; color: #fff">
@@ -196,10 +196,10 @@
               <th>Work Area</th>
               <th>Received Date</th>
               <th>Registered Date</th>
-              <th>Collect -> Registration</th>
+              <th>Collected -> Registration</th>
               <th>Received at Lab -> Registration</th>
-              <th>Requ -> FullRes</th>
-              <th>Requ -> Reviewed</th>
+              <th>Requested -> FullResults </th>
+              <th>Requested -> Reviewed</th>
             </tr>
           </thead>
           <tbody>
