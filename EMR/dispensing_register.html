@@ -59,6 +59,12 @@
           transform: rotate(360deg);
         }
       }
+
+      #report-app .searching-input {
+        padding: 4px;
+        border-radius: 3px;
+        width: 30%;
+      }
     </style>
 
     <link
@@ -155,32 +161,68 @@
                 ? window["iReportsDimensions"]?.endDate
                 : new Date().getFullYear().toString() +
                   "-" +
-                  (new Date().getMonth() +
-                  1) +
+                  (new Date().getMonth() + 1) +
                   "-" +
                   new Date().getDate(),
               dataSetUuid: "c49187ef-079f-4c03-9000-a5cc2745fda9",
             };
+            $scope.loadedDataRows = [];
             $scope.dataRows = [];
             $scope.maxRejectionReasons = 1;
             $scope.loading = true;
+            $scope.formatDataToDisplay = (dataRows) => {
+              $scope.dataRows = [];
+              for (var i = 0; i < dataRows?.length; i++) {
+                dataRows[i]?.DAWA.split(";").forEach((dawa, index) => {
+                  $scope.dataRows = [
+                    ...$scope.dataRows,
+                    {
+                      prescription: dawa,
+                      drug: dawa.split(":-")[0],
+                      mrn: dataRows[i]?.MRN,
+                      index,
+                      rowspan: dataRows[i]?.DAWA.split(";").length,
+                      names: dataRows[i]["JINA LA MGONJWA"],
+                      visitDate: dataRows[i]["TAREHE"],
+                      quantity: dawa.split(":-")[1],
+                      unit: dawa.split(":-")[2],
+                    },
+                  ];
+                  // console.log($scope.dataRows);
+                });
+              }
+            };
+
+            $scope.searchItems = (event) => {
+              const searchingText = event?.target?.value;
+              const matchedItems = $scope.loadedDataRows?.filter(
+                (row) =>
+                  row?.searchingText
+                    ?.toLowerCase()
+                    ?.indexOf(searchingText?.toLowerCase()) > -1
+              );
+              $scope.formatDataToDisplay(matchedItems);
+            };
+
             FactoryDefns.getData($scope.reportDimensions).then((response) => {
-                
-              console.log("aaaa=> ",response?.rows);
-              for(var i = 0; i < response?.rows?.length; i++){
-                // console.log("HALLO ",response?.rows[i]?.DAWA)
-                response?.rows[i]?.DAWA.split(";").forEach(dawa => {
-                    $scope.dataRows = [$scope.dataRows, {
-                        drug: dawa,
-                        MRN: response?.rows[i]?.MRN,
-                        rowspan: response?.rows[i]?.DAWA.split(";").length
-                    }]
-                })
-              }     
-               
-             
-              $scope.loading = false;
-              $scope.$apply();
+              if (response) {
+                $scope.loadedDataRows = response?.rows?.map((row) => {
+                  return {
+                    ...row,
+                    searchingText:
+                      row["JINA LA MGONJWA"] +
+                      " " +
+                      row["TAREHE"] +
+                      " " +
+                      row["DAWA"] +
+                      " " +
+                      row["MRN"],
+                  };
+                });
+                $scope.formatDataToDisplay($scope.loadedDataRows);
+                $scope.loading = false;
+                $scope.$apply();
+              }
             });
           },
         ]);
@@ -189,34 +231,44 @@
   <body>
     <div id="report-app" ng-app="reportModule" ng-controller="reportController">
       <h3 class="text-center">Dispensing Register</h3>
+      <div style="width: 100%">
+        <input
+          type="text"
+          placeholder="Search here"
+          class="searching-input"
+          ng-keyup="searchItems($event)"
+        />
+      </div>
       <div style="width: 100%; overflow: auto; margin-top: 16px">
         <table class="table table-bordered" ng-if="!loading">
           <thead style="background-color: #2e8180; color: #fff">
             <tr>
               <th>Na</th>
               <th>TAREHE</th>
+              <th>MRN</th>
               <th>JINA LA MGONJWA</th>
               <th>DAWA</th>
-              <th>Health Facility</th>
-              <th>Test</th>
-              <th>Rejected On</th>
-              <th ng-repeat="header in reasonsHeaders;">
-                {{header.name}}
-              </th>
+              <th>IDADI</th>
+              <th>UNITS</th>
             </tr>
           </thead>
           <tbody>
             <tr ng-repeat="dataRow in dataRows;">
-              <td>{{dataRow.Na}}</td>
-              <td>{{dataRow.TAREHE}}</td>
-              <td>{{dataRow.MGONJWA}}</td>
-              <td>{{dataRow.patient_age}}</td>
-              <td>{{dataRow.health_facility}}</td>
-              <td>{{dataRow.test}}</td>
-              <td>{{dataRow.rejection_date}}</td>
-              <td ng-repeat="header in reasonsHeaders;">
-                {{dataRow.rejectionReasons[$index][header.key]}}
+              <td rowspan="{{dataRow.rowspan}}" ng-if="dataRow.index ==0">
+                {{$index +1}}
               </td>
+              <td rowspan="{{dataRow.rowspan}}" ng-if="dataRow.index ==0">
+                {{dataRow.visitDate}}
+              </td>
+              <td rowspan="{{dataRow.rowspan}}" ng-if="dataRow.index ==0">
+                {{dataRow.mrn}}
+              </td>
+              <td rowspan="{{dataRow.rowspan}}" ng-if="dataRow.index ==0">
+                {{dataRow.names}}
+              </td>
+              <td>{{dataRow.drug}}</td>
+              <td>{{dataRow.quantity}}</td>
+              <td>{{dataRow.unit}}</td>
             </tr>
           </tbody>
         </table>
