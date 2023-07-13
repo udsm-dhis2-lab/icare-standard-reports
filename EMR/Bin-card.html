@@ -422,7 +422,8 @@
               class="selected-items-box-item"
               ng-click="toggleMultipleSelectionItem($event)"
             >
-              <span> Stockable Items</span>
+              <span> {{ selectedItems.length > 0 ? selectedItems[0].display: 'Stockable Items' }}</span>
+              
               <span>
                 <img
                   height="10"
@@ -477,7 +478,7 @@
                       ng-disabled="selectedItems.length ==0"
                       ng-click="updateItems()"
                     >
-                      Update
+                      Select
                     </button>
                   </td>
                 </tr>
@@ -510,7 +511,7 @@
             style="margin-left: 8px"
             ng-click="loadData(startDate, endDate)"
           >
-            Update
+            View Report
           </button>
         </div>
       </div>
