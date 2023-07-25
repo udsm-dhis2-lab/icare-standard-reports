@@ -522,6 +522,7 @@
               <th>SN</th>
               <th>Date</th>
               <th>Ref. No</th>
+              <th>Batch</th>
               <th>Receipt from/ issued to</th>
               <th>Quantity Received</th>
               <th>Quantity Issued</th>
@@ -536,6 +537,7 @@
               <td>{{$index+1}}</td>
               <td>{{dataRow.date | date:"medium"}}</td>
               <td>{{dataRow.ref_no}}</td>
+              <td>{{dataRow.batch_no}}</td>
               <td>{{dataRow.from_to}}</td>
               <td>{{dataRow.qty_received}}</td>
               <td>{{dataRow.qty_issued}}</td>
