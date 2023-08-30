@@ -1,0 +1,353 @@
+<style>
+    #report-app .loader-section {
+      padding: 5rem;
+      text-align: center;
+      background-color: #f2f2f2;
+      margin-top: 10px;
+      margin-bottom: 20px;
+    }
+  
+    #report-app .spaced {
+      margin-top: 5rem;
+    }
+  
+    #report-app table {
+      border-collapse: collapse;
+    }
+  
+    #report-app table,
+    #report-app th,
+    #report-app td {
+      border: 1px solid #c0c0c0;
+    }
+  
+    #report-app th {
+      text-align: center;
+    }
+  
+    #report-app td,
+    #report-app th {
+      height: 25px;
+      padding: 6px;
+      margin: 10px;
+    }
+  
+    #report-app .loader {
+      border: 16px solid #f3f3f3;
+      border-radius: 50%;
+      border-top: 16px solid #3498db;
+      width: 120px;
+      height: 120px;
+      -webkit-animation: spin 2s linear infinite;
+      /* Safari */
+      animation: spin 2s linear infinite;
+    }
+  
+    /* Safari */
+    @-webkit-keyframes spin {
+      0% {
+        -webkit-transform: rotate(0deg);
+      }
+  
+      100% {
+        -webkit-transform: rotate(360deg);
+      }
+    }
+  
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+  
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  
+    #report-app .selection-btn {
+      margin-left: 6px;
+      padding: 6px 6px;
+      border: solid 1px #dbdada;
+      border-radius: 4px;
+    }
+  
+    #report-app .active-btn {
+      background-color: #3498db;
+      color: #fff;
+      font-weight: 600;
+    }
+  
+    #report-app .wrapper {
+      width: 400px;
+      position: relative;
+    }
+  
+    #report-app .wrapper .selected-items-box {
+      cursor: pointer;
+      border: solid 1px #ddd;
+      padding: 5px;
+      background-color: transparent;
+      color: #222;
+      width: 400px;
+    }
+  
+    #report-app .selected-items-box .items-list {
+      list-style-type: none;
+      width: 100%;
+      padding: 0;
+      margin: 0;
+    }
+  
+    #report-app .selected-items-box .items-list li {
+      display: inline;
+    }
+  
+    #report-app .wrapper .list {
+      display: none;
+      height: 320px;
+      width: 400px;
+      overflow-y: hidden;
+      overflow-x: hidden;
+      border-left: solid 1px #c7c6c7;
+      border-right: solid 1px #c7c6c7;
+      border-bottom: solid 1px #c7c6c7;
+      z-index: 100;
+      position: absolute;
+      box-shadow: 0 3px 1px -2px rgb(0 0 0 / 20%), 0 2px 2px 0 rgb(0 0 0 / 14%),
+        0 1px 5px 0 rgb(0 0 0 / 12%);
+    }
+  
+    #report-app .list .items-list {
+      list-style-type: none;
+      width: 100%;
+      padding: 0;
+      margin: 0;
+      height: 215px;
+      overflow: auto;
+    }
+  
+    #report-app .list .items-list li {
+      margin: 0;
+      width: 100%;
+      padding: 0;
+      border-bottom: solid 1px #c7c6c7;
+      padding: 5px;
+      background-color: #fff;
+    }
+  
+    #report-app .selections-multiple-lis {
+      background-color: #fff;
+      z-index: 21;
+    }
+  
+    #report-app .search-input {
+      border-radius: 4px;
+      border: solid 1px #22222252;
+      padding: 6px;
+    }
+  </style>
+  
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css"
+  />
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css"
+  />
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"
+    integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
+  <script type="text/javascript">
+    angular
+      .module("reportModule", [])
+      .factory("FactoryDefns", function ($window, $http) {
+        var uri = "data:application/vnd.ms-excel;base64,",
+          template =
+            '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table border="1">{table}</table><br /><table border="1">{table}</table></body></html>',
+          base64 = function (s) {
+            return $window.btoa(unescape(encodeURIComponent(s)));
+          },
+          format = function (s, c) {
+            return s.replace(/{(\w+)}/g, function (m, p) {
+              return c[p];
+            });
+          };
+        return {
+          tableToExcel: function () {
+            var tables = $(
+              ".pop-table, .maternal-table, .cchp-table, .opd-table, .ipd-table, .death-table, .notifiable-table, .tracer-table"
+            );
+            var ctx = { worksheet: "Sheet 1" };
+            var str =
+              '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>';
+  
+            tables.each(function (index) {
+              $(this)
+                .find("td.hidden")
+                .each(function (index2) {
+                  this.remove();
+                });
+              ctx["table" + index] = this.innerHTML;
+              if (this.title == "no-border") {
+                str += "<table>{" + "table" + index + "}</table><br />";
+              } else {
+                str +=
+                  '<table border="1">{' + "table" + index + "}</table><br />";
+              }
+            });
+            str += "</body></html>";
+            var href = uri + base64(format(str, ctx));
+            return href;
+          },
+          getOrderTypes: async function (q) {
+            return await $http
+              .get(
+                `../../../openmrs/ws/rest/v1/ordertype?v=full`
+              )
+              .then((response) => {
+                return response.data;
+              });
+          },
+          
+          getData: async function (reportDimensions, datasetUuid, orderTypeUuid) {
+            if (!reportDimensions) {
+              return null;
+            }
+            return await $http
+              .get(
+                `../../../openmrs/ws/rest/v1/reportingrest/dataSet/${datasetUuid}?startDate=${reportDimensions?.startDate}&endDate=${reportDimensions?.endDate}&orderTypeUuid=${orderTypeUuid}`
+              )
+              .then((response) => {
+                return response.data;
+              });
+          },
+        };
+      })
+      .controller("reportController", [
+        "$scope",
+        "$http",
+        "$timeout",
+        "$q",
+        "FactoryDefns",
+        function ($scope, $http, $timeout, $q, FactoryDefns) {
+          $scope.currentUser = null;
+          $scope.loading = false;
+          $scope.reasonsHeaders = [];
+          $scope.reportDimensions = {
+            startDate: window["iReportsDimensions"]
+              ? window["iReportsDimensions"]?.startDate
+              : "2022-11-22",
+            endDate: window["iReportsDimensions"]
+              ? window["iReportsDimensions"]?.endDate
+              : new Date().getFullYear().toString() +
+                "-" +
+                new Date().getMonth() +
+                1 +
+                "-" +
+                new Date().getDate(),
+          };
+          let datasetUuid = "4c748479-0868-4cfa-a948-74b5c36bd0f6";
+          $scope.dataRows = [];
+          $scope.loading = false;
+          $scope.orderTypes = [];
+          $scope.selectedOrderType
+          $scope.loadedFilters = false; 
+          $scope.showMultipleSelection = false;
+  
+          $scope.loadData = function () {
+            $scope.dataRows = [];
+              FactoryDefns.getData(
+                $scope.reportDimensions,
+                datasetUuid,
+                $scope.selectedOrderType?.uuid
+              ).then((response) => {
+                  $scope.dataRows = response?.rows;
+                  $scope.loading = false;
+                  $scope.loaded = true;
+                  $scope.$apply();
+              });
+            
+          };
+  
+  
+        FactoryDefns.getOrderTypes().then((orderTypesresponse) => {
+            $scope.orderTypes = _.orderBy(
+                orderTypesresponse?.results,
+                ["display"],
+                ["asc"]
+            );
+            $scope.loadedFilters = true;
+            $scope.$apply();
+        });
+        
+        $scope.getSelectedOrderType = (event, orderType) =>{
+            console.log("changed", orderType?.uuid);
+            $scope.selectedOrderType = orderType;
+            $scope.loadData();
+
+        }
+
+  
+          
+        },
+      ]);
+  </script>
+  
+  <div id="report-app" ng-app="reportModule" ng-controller="reportController">
+    <h3 class="text-center">Financial Report By Department</h3>
+  
+    <p ng-if="!loadedFilters">Loading filters ......................</p>
+      <div class="filters" ng-if="loadedFilters">
+        <select
+          style="width: 20%"
+          class="item-selection"
+          ng-options="orderType as orderType.display for orderType in orderTypes track by orderType.uuid"
+          ng-model="selectedOrderType"
+          ng-change="getSelectedOrderType($event,selectedOrderType)"
+        >
+          <option></option>
+        </select>
+
+    <div style="width: 100%; overflow: auto; margin-top: 16px">
+      <table class="table table-bordered" ng-if="!loading">
+        <thead style="background-color: #2e8180; color: #fff">
+          <tr>
+            <th>SN</th>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr ng-repeat="dataRow in dataRows;">
+            <td>{{$index+1}}</td>
+            <td>{{dataRow.item}}</td>
+            <td>{{dataRow.quantity}}</td>
+            <td>{{dataRow.price}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div
+        ng-if="loading"
+        style="
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+        <div class="loader"></div>
+      </div>
+    </div>
+  </div>
+  

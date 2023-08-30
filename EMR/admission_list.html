@@ -162,7 +162,6 @@
               dataSetUuid: "719d6654-7a56-4de4-8613-d65201691a47",
             };
             $scope.dataRows = [];
-            $scope.maxRejectionReasons = 1;
             $scope.loading = true;
             FactoryDefns.getData($scope.reportDimensions).then((response) => {
               const responseRows = response?.rows;
