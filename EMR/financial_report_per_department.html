@@ -297,6 +297,22 @@
 
         }
 
+    $scope.calculateTotalQuantity = function() {
+      var totalQuantity = 0;
+      for (var i = 0; i < $scope.dataRows.length; i++) {
+        totalQuantity += $scope.dataRows[i].quantity;
+      }
+      return totalQuantity;
+    };
+
+    $scope.calculateTotalPrice = function(){
+      var totalPrice = 0;
+      for (var i = 0; i < $scope.dataRows.length; i++) {
+        totalPrice += $scope.dataRows[i].price;
+      }
+      return totalPrice;
+    }
+
   
           
         },
@@ -334,6 +350,12 @@
             <td>{{dataRow.item}}</td>
             <td>{{dataRow.quantity}}</td>
             <td>{{dataRow.price}}</td>
+          </tr>
+          <tr ng-if="dataRows.length > 0">
+            <td></td>
+            <td><b>Total</b></td>
+            <td><b>{{ calculateTotalQuantity() }}</b></td>
+            <td><b>{{ calculateTotalPrice() }}</b></td>
           </tr>
         </tbody>
       </table>
