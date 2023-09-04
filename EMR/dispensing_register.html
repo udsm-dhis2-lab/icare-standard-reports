@@ -185,6 +185,7 @@
                       visitDate: dataRows[i]["TAREHE"],
                       quantity: dawa.split(":-")[1],
                       unit: dawa.split(":-")[2],
+                      doc: dataRows[i]["DOC"].split(",")[0]
                     },
                   ];
                   // console.log($scope.dataRows);
@@ -249,6 +250,7 @@
               <th>DAWA</th>
               <th>IDADI</th>
               <th>UNITS</th>
+              <th>DOCTOR</th>
             </tr>
           </thead>
           <tbody>
@@ -268,6 +270,7 @@
               <td>{{dataRow.drug}}</td>
               <td>{{dataRow.quantity}}</td>
               <td>{{dataRow.unit}}</td>
+              <td>{{dataRow.doc}}</td>
             </tr>
           </tbody>
         </table>
