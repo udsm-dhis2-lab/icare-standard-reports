@@ -274,8 +274,12 @@
         $scope.rejectionReasons = [];
         $scope.selectedItems = [];
         $scope.showMultipleSelection = true;
-
+        
         $scope.loadData = function () {
+          $scope.totalRejects = 0;
+          $scope.totalRequests = 0;
+          $scope.rejectsPercentage = 0;
+          $scope.rejectionReasonTotals = {};
           $scope.dataRows = [];
           $scope.selectedItems?.forEach((item) => {
             FactoryDefns.getData(
@@ -285,6 +289,8 @@
             ).then((response) => {
               const responseRows = response?.rows?.map((row, index) => {
                 var rejectionsNumber = {};
+                $scope.totalRequests += row.number_of_requests
+                $scope.totalRejects += row.number_of_rejects
                 $scope.rejectionReasons?.map((reason) => {
                   var count = 0;
                   const regex = new RegExp(`\\b${reason?.name}\\b`, "g");
@@ -307,8 +313,18 @@
                   ...rejectionsNumber,
                 };
               });
+              $scope.rejectsPercentage = (($scope.totalRejects/$scope.totalRequests) * 100).toFixed(2);
               $scope.dataRows = [...$scope.dataRows, ...responseRows];
 
+              for (var i = 0; i < $scope.dataRows.length; i++) {
+                 // Calculate individual rejection reason totals
+                for (var j = 0; j < $scope.rejectionReasons.length; j++) {
+                   var reasonName = $scope.rejectionReasons[j].name;
+                   $scope.rejectionReasonTotals[reasonName] = ($scope.rejectionReasonTotals[reasonName] || 0) + $scope.dataRows[i][reasonName];
+                }
+              }
+
+              console.log("dataRows: ", $scope.dataRows);
               $scope.loading = false;
               $scope.$apply();
             });
@@ -361,6 +377,7 @@
             $scope.$apply();
           });
         };
+
 
         $scope.getTestOrders();
         FactoryDefns.getRejectionReasons().then((response) => {
@@ -482,11 +499,23 @@
           <td>{{dataRow.test}}</td>
           <td>{{dataRow.health_facility}}</td>
           <td>{{dataRow.number_of_requests}}</td>
-          <td>{{dataRow.number_of_rejects}}</td>
-          <td>{{dataRow.percentage_of_rejects}}</td>
+          <td>{{dataRow.number_of_rejects || 0}}</td>
+          <td>{{dataRow.percentage_of_rejects || 0}}</td>
           <td ng-repeat="rejectionReason in rejectionReasons;">
             {{dataRow[rejectionReason.name]}}
           </td>
+        </tr>
+        <tr>
+          <td colspan="3" style="text-align: center;">
+            <b>Total</b>
+          </td>
+          <td>{{totalRequests}}</td>
+          <td>{{totalRejects}}</td>
+          <td>{{rejectsPercentage}}</td>
+          <td ng-repeat="rejectionReason in rejectionReasons;" >
+              {{rejectionReasonTotals[rejectionReason.name]}} 
+          </td>
+
         </tr>
       </tbody>
     </table>
