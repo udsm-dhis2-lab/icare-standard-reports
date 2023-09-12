@@ -18,6 +18,7 @@
         padding: 6px 6px;
         border: solid 1px #dbdada;
         border-radius: 4px;
+        background-color: #fff !important;
       }
 
       #report-app .report-table th,
@@ -80,7 +81,7 @@
         padding: 5px;
         background-color: transparent;
         color: #222;
-        width: 592px;
+        max-width: 592px;
       }
       #report-app .selected-items-box .items-list {
         list-style-type: none;
@@ -95,8 +96,8 @@
       #report-app .wrapper .list,
       #report-app .wrapper-item .list {
         display: none;
-        height: 320px;
-        width: 600px;
+        max-height: 350px;
+        max-width: 600px;
         overflow-y: hidden;
         overflow-x: hidden;
         border-left: solid 1px #c7c6c7;
@@ -140,16 +141,11 @@
 
     <link
       rel="stylesheet"
-      type="text/css"
-      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
     />
-    <link
-      rel="stylesheet"
-      type="text/css"
-      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css"
-    />
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
     <script
@@ -399,120 +395,125 @@
     <div id="report-app" ng-app="reportModule" ng-controller="reportController">
       <h2 class="text-center report-header">Bin Card</h2>
       <p ng-if="!loadedFilters">Loading filters ......................</p>
-      <div class="filters" ng-if="loadedFilters">
-        <select
-          style="width: 20%"
-          class="item-selection"
-          ng-options="item as item.display for item in storeLocations track by item.uuid"
-          ng-model="selectedLocation"
-          ng-change="getSelectedLocation($event,selectedLocation)"
-        >
-          <option></option>
-        </select>
-        <div
-          style="
-            width: 40%;
-            margin-top: 4px;
-            z-index: 20;
-            display: flex !important;
-          "
-        >
-          <div class="wrapper-item" style="margin-left: 4px">
-            <div
-              class="selected-items-box-item"
-              ng-click="toggleMultipleSelectionItem($event)"
-            >
-              <span> {{ selectedItems.length > 0 ? selectedItems[0].display: 'Stockable Items' }}</span>
-              
-              <span>
-                <img
-                  height="10"
-                  style="float: right"
-                  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAA6UlEQVRIie3TsUtCURTH8Y8aCAYSCWEQNASCBA0tDU7h1lJLS1tTSzQF7U3i1NbU1hz+A04NLWJBBEEQGGZQ4NjckA9CeOrT1/a+cId77u98OWe4JCTEwT2q/+Ctog0VfGIvRvkOvrAdFDbRw34M8l18YGv4oYw3HM4gP8A7NsICJXRwMoX8CF2sjwuu4gWnEeTHeMXapA1FPKI2QfYMz1iJMBBYwgPqSIVkzvGE5ajygAXc4RLpP/UULtBCYVp5wDyauMYcMrjCLfLjmsNWHyaHBvqD+6Lfj/kdcdiRZHEzONk4xQkJo/kBrP8gcz3u2LkAAAAASUVORK5CYII="
-                />
-              </span>
-            </div>
-            <div
-              style="background-color: #fff"
-              class="list"
-              ng-style="{'display': showMultipleSelectionItem ? 'block': 'none'}"
-            >
-              <table class="table">
-                <tr>
-                  <td colspan="2">
-                    <input
-                      class="search-input"
-                      placeholder="Search"
-                      style="width: 100%"
-                      ng-keyup="onSearchItem($event)"
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td style="width: 50%">
-                    <ul class="items-list">
-                      <li
-                        ng-repeat="item in stockableItems"
-                        ng-click="getSelectedItem($event, item)"
+      <div class="filters row" ng-if="loadedFilters">
+        <div class="col-lg-3 col-md-3 col-sx-12 col-sm-12">
+          <select
+            style="width: 100%"
+            class="item-selection"
+            ng-options="item as item.display for item in storeLocations track by item.uuid"
+            ng-model="selectedLocation"
+            ng-change="getSelectedLocation($event,selectedLocation)"
+          >
+            <option></option>
+          </select>
+        </div>
+        <div class="col-lg-4 col-md-4 col-sm-12 col-sx-12">
+          <div style="width: 100%; z-index: 20; display: flex !important">
+            <div class="wrapper-item" style="margin-left: 4px">
+              <div
+                class="selected-items-box-item"
+                style="border-radius: 4px"
+                ng-click="toggleMultipleSelectionItem($event)"
+              >
+                <span>
+                  {{ selectedItems.length > 0 ? selectedItems[0].display:
+                  'Stockable Items' }}</span
+                >
+
+                <span>
+                  <img
+                    height="10"
+                    style="float: right; margin-right: 4px; margin-top: 6px"
+                    src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAA6UlEQVRIie3TsUtCURTH8Y8aCAYSCWEQNASCBA0tDU7h1lJLS1tTSzQF7U3i1NbU1hz+A04NLWJBBEEQGGZQ4NjckA9CeOrT1/a+cId77u98OWe4JCTEwT2q/+Ctog0VfGIvRvkOvrAdFDbRw34M8l18YGv4oYw3HM4gP8A7NsICJXRwMoX8CF2sjwuu4gWnEeTHeMXapA1FPKI2QfYMz1iJMBBYwgPqSIVkzvGE5ajygAXc4RLpP/UULtBCYVp5wDyauMYcMrjCLfLjmsNWHyaHBvqD+6Lfj/kdcdiRZHEzONk4xQkJo/kBrP8gcz3u2LkAAAAASUVORK5CYII="
+                  />
+                </span>
+              </div>
+              <div
+                style="background-color: #fff"
+                class="list"
+                ng-style="{'display': showMultipleSelectionItem ? 'block': 'none'}"
+              >
+                <table class="table">
+                  <tr>
+                    <td colspan="2">
+                      <input
+                        class="search-input"
+                        placeholder="Search"
+                        style="width: 100%"
+                        ng-keyup="onSearchItem($event)"
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="width: 50%">
+                      <ul class="items-list">
+                        <li
+                          ng-repeat="item in stockableItems"
+                          ng-click="getSelectedItem($event, item)"
+                        >
+                          <span>{{item.display}}</span>
+                        </li>
+                      </ul>
+                    </td>
+                    <td style="width: 50%">
+                      <ul class="items-list">
+                        <li
+                          ng-repeat="item in selectedItems"
+                          ng-click="unSelectItem($event, item)"
+                        >
+                          <span>{{item.display}}</span>
+                        </li>
+                      </ul>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="2">
+                      <button
+                        class="btn btn-info"
+                        style="float: right"
+                        ng-disabled="selectedItems.length ==0"
+                        ng-click="updateItems()"
                       >
-                        <span>{{item.display}}</span>
-                      </li>
-                    </ul>
-                  </td>
-                  <td style="width: 50%">
-                    <ul class="items-list">
-                      <li
-                        ng-repeat="item in selectedItems"
-                        ng-click="unSelectItem($event, item)"
-                      >
-                        <span>{{item.display}}</span>
-                      </li>
-                    </ul>
-                  </td>
-                </tr>
-                <tr>
-                  <td colspan="2">
-                    <button
-                      class="btn btn-primary"
-                      style="float: right"
-                      ng-disabled="selectedItems.length ==0"
-                      ng-click="updateItems()"
-                    >
-                      Select
-                    </button>
-                  </td>
-                </tr>
-              </table>
+                        Update
+                      </button>
+                    </td>
+                  </tr>
+                </table>
+              </div>
             </div>
           </div>
         </div>
-        <div style="width: 40%">
-          <span>
-            StartDate:
-            <input
-              class="date-input"
-              ng-model="startDate"
-              max="{{today}}"
-              placeholder="Start date"
-              type="date"
-            />
-          </span>
-          <span style="margin-left: 8px">
-            End Date:
-            <input
-              class="date-input"
-              ng-model="endDate"
-              placeholder="End date"
-              type="date"
-            />
-          </span>
-          <button
-            ng-disabled="!startDate || !endDate || selectedItems?.length === 0"
-            style="margin-left: 8px"
-            ng-click="loadData(startDate, endDate)"
-          >
-            View Report
-          </button>
+        <div class="col-lg-5 col-md-5 col-sm-12 col-sx-12">
+          <div style="width: 100%" class="d-flex justify-content-left">
+            <span>
+              StartDate:
+              <input
+                class="date-input"
+                ng-model="startDate"
+                max="{{today}}"
+                placeholder="Start date"
+                type="date"
+              />
+            </span>
+            <span style="margin-left: 8px">
+              End Date:
+              <input
+                class="date-input"
+                ng-model="endDate"
+                placeholder="End date"
+                type="date"
+              />
+            </span>
+            <button
+              type="button"
+              class="btn btn-info"
+              ng-disabled="!startDate || !endDate || selectedItems?.length === 0"
+              style="margin-left: 8px"
+              ng-click="loadData(startDate, endDate)"
+            >
+              View Report
+            </button>
+          </div>
         </div>
       </div>
       <div style="width: 100%; overflow: auto; margin-top: 16px">
