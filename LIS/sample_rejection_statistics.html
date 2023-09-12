@@ -517,6 +517,20 @@
           </td>
 
         </tr>
+        <tr>
+          <td colspan="6" style="text-align: center;"><b>Percentage of total rejects</b></td>
+          <td ng-repeat="rejectionReason in rejectionReasons;">
+            {{ (rejectionReasonTotals[rejectionReason.name] / totalRejects * 100) | number: 2 }}
+          </td>
+        </tr>
+
+        <tr>
+          <td colspan="6" style="text-align: center;"><b>Percentage of total requests</b></td>
+          <td ng-repeat="rejectionReason in rejectionReasons;">
+            {{ (rejectionReasonTotals[rejectionReason.name] / totalRequests * 100) | number: 2 }}
+          </td>
+        </tr>
+
       </tbody>
     </table>
     <div
