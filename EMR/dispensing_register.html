@@ -164,7 +164,7 @@
                   (new Date().getMonth() + 1) +
                   "-" +
                   new Date().getDate(),
-              dataSetUuid: "c49187ef-079f-4c03-9000-a5cc2745fda9",
+              dataSetUuid: "f66de7af-1adf-4f1c-849a-8f1c805af925",
             };
             $scope.loadedDataRows = [];
             $scope.dataRows = [];
@@ -185,7 +185,8 @@
                       visitDate: dataRows[i]["TAREHE"],
                       quantity: dawa.split(":-")[1],
                       unit: dawa.split(":-")[2],
-                      doc: dataRows[i]["DOC"].split(",")[0]
+                      doc: dataRows[i]["DOC"].split(",")[0],
+                      na: dataRows[i]["Na"]
                     },
                   ];
                   // console.log($scope.dataRows);
@@ -256,7 +257,7 @@
           <tbody>
             <tr ng-repeat="dataRow in dataRows;">
               <td rowspan="{{dataRow.rowspan}}" ng-if="dataRow.index ==0">
-                {{$index +1}}
+                {{dataRow.na}}
               </td>
               <td rowspan="{{dataRow.rowspan}}" ng-if="dataRow.index ==0">
                 {{dataRow.visitDate}}

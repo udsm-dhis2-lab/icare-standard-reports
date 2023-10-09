@@ -256,7 +256,7 @@
                 "-" +
                 new Date().getDate(),
           };
-          let datasetUuid = "a1317ebb-3056-4c92-9711-15bc486b70b6";
+          let datasetUuid = "ba858352-3aa4-426b-9110-f4e901c6f8fb";
           $scope.dataRows = [];
           $scope.loading = false;
           $scope.orderTypes = [];
@@ -293,9 +293,9 @@
         $scope.getSelectedOrderType = (event, orderType) =>{
             console.log("changed", orderType?.uuid);
             if(orderType?.uuid === 'iCARESTS-PRES-1111-1111-525400e4297f'){
-              datasetUuid = '73b66105-087d-4c6f-a5f9-dc1a03cf3d8f'
+              datasetUuid = '587a839f-e713-4dc9-97e6-68f68624174b'
             } else{
-              datasetUuid = "a1317ebb-3056-4c92-9711-15bc486b70b6";
+              datasetUuid = "ba858352-3aa4-426b-9110-f4e901c6f8fb";
             }
             $scope.selectedOrderType = orderType;
             $scope.loadData();
