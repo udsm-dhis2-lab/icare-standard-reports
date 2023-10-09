@@ -256,7 +256,7 @@
                 "-" +
                 new Date().getDate(),
           };
-          let datasetUuid = "ba858352-3aa4-426b-9110-f4e901c6f8fb";
+          let datasetUuid = "a1317ebb-3056-4c92-9711-15bc486b70b6";
           $scope.dataRows = [];
           $scope.loading = false;
           $scope.orderTypes = [];
@@ -293,9 +293,9 @@
         $scope.getSelectedOrderType = (event, orderType) =>{
             console.log("changed", orderType?.uuid);
             if(orderType?.uuid === 'iCARESTS-PRES-1111-1111-525400e4297f'){
-              datasetUuid = '587a839f-e713-4dc9-97e6-68f68624174b'
+              datasetUuid = '73b66105-087d-4c6f-a5f9-dc1a03cf3d8f'
             } else{
-              datasetUuid = "ba858352-3aa4-426b-9110-f4e901c6f8fb";
+              datasetUuid = "a1317ebb-3056-4c92-9711-15bc486b70b6";
             }
             $scope.selectedOrderType = orderType;
             $scope.loadData();
@@ -318,6 +318,41 @@
       return totalPrice;
     }
 
+    $scope.shouldDisplayOrderType = function(orderType) {
+     // List the order types you want to display
+      var allowedOrderTypes = ["Prescription", "Consultation Status", "Test Order", "Procedure Order", "Radiology Order"];
+
+     // Check if the order type is in the list of allowed order types
+      return allowedOrderTypes.includes(orderType.name);
+    };
+
+    $scope.customizedOrderTypeDisplay = function(orderType){
+
+      if(orderType.name === "Prescription"){
+        console.log("drug od", orderType.name);
+        return "Drug Orders";
+      }
+
+      if(orderType.name === "Consultation Status"){
+        return "Consultations";
+      }
+
+      if(orderType.name === "Test Order"){
+        return "Laboratory Orders"
+      }
+
+      if(orderType.name === "Procedure Order"){
+        return "Procedure Orders"
+      }
+
+      if(orderType.name === "Radiology Order"){
+        return "Radiology Orders"
+      }
+
+
+
+    }
+
   
           
         },
@@ -332,7 +367,7 @@
         <select
           style="width: 20%"
           class="item-selection"
-          ng-options="orderType as orderType.display for orderType in orderTypes track by orderType.uuid"
+          ng-options="orderType as customizedOrderTypeDisplay(orderType) for orderType in orderTypes | filter: shouldDisplayOrderType track by orderType.uuid"
           ng-model="selectedOrderType"
           ng-change="getSelectedOrderType($event,selectedOrderType)"
         >
