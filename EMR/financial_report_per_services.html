@@ -341,7 +341,7 @@
       }
 
       if(orderType.name === "Consultation Status"){
-        return "CONSULTATION";
+        return "CONSULTATIONS";
       }
 
       if(orderType.name === "Test Order"){
@@ -349,7 +349,7 @@
       }
 
       if(orderType.name === "Procedure Order"){
-        return "PROCEDURE"
+        return "PROCEDURES"
       }
 
       if(orderType.name === "Radiology Order"){
@@ -366,7 +366,7 @@
   </script>
   
   <div id="report-app" ng-app="reportModule" ng-controller="reportController">
-    <h3 class="text-center">Financial Report Per Order Types</h3>
+    <h3 class="text-center">Financial Report Per Services</h3>
   
     <p ng-if="!loadedFilters">Loading filters ......................</p>
       <div class="filters" ng-if="loadedFilters">
