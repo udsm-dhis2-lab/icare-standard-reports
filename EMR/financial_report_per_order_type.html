@@ -281,11 +281,13 @@
   
   
         FactoryDefns.getOrderTypes().then((orderTypesresponse) => {
-            $scope.orderTypes = _.orderBy(
+            $scope.orderTypes =_.orderBy(
                 orderTypesresponse?.results,
                 ["display"],
                 ["asc"]
             );
+            // Add the custom "ALL" option
+            $scope.orderTypes.unshift({ uuid: 'all', name: 'ALL' });
             $scope.loadedFilters = true;
             $scope.$apply();
         });
@@ -294,6 +296,8 @@
             console.log("changed", orderType?.uuid);
             if(orderType?.uuid === 'iCARESTS-PRES-1111-1111-525400e4297f'){
               datasetUuid = '73b66105-087d-4c6f-a5f9-dc1a03cf3d8f'
+            } else if(orderType?.uuid === 'all'){
+               datasetUuid = '9d857009-fd92-4cab-912e-f7bbaad7e4d3' 
             } else{
               datasetUuid = "a1317ebb-3056-4c92-9711-15bc486b70b6";
             }
@@ -320,7 +324,7 @@
 
     $scope.shouldDisplayOrderType = function(orderType) {
      // List the order types you want to display
-      var allowedOrderTypes = ["Prescription", "Consultation Status", "Test Order", "Procedure Order", "Radiology Order"];
+      var allowedOrderTypes = ["Prescription", "Consultation Status", "Test Order", "Procedure Order", "Radiology Order", "ALL"];
 
      // Check if the order type is in the list of allowed order types
       return allowedOrderTypes.includes(orderType.name);
@@ -328,27 +332,29 @@
 
     $scope.customizedOrderTypeDisplay = function(orderType){
 
+      if(orderType.name === "ALL"){
+        return "ALL";
+      }
+
       if(orderType.name === "Prescription"){
-        console.log("drug od", orderType.name);
-        return "Drug Orders";
+        return "MEDICATIONS";
       }
 
       if(orderType.name === "Consultation Status"){
-        return "Consultations";
+        return "CONSULTATION";
       }
 
       if(orderType.name === "Test Order"){
-        return "Laboratory Orders"
+        return "LABORATORY"
       }
 
       if(orderType.name === "Procedure Order"){
-        return "Procedure Orders"
+        return "PROCEDURE"
       }
 
       if(orderType.name === "Radiology Order"){
-        return "Radiology Orders"
+        return "RADIOLOGY"
       }
-
 
 
     }
