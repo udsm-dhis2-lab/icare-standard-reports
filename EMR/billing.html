@@ -13,14 +13,17 @@
       #report-app .spaced {
         margin-top: 5rem;
       }
+
       #report-app table {
         border-collapse: collapse;
       }
+
       #report-app table,
       #report-app th,
       #report-app td {
         border: 1px solid #c0c0c0;
       }
+
       #report-app th {
         text-align: center;
       }
@@ -155,13 +158,11 @@
                 ? window["iReportsDimensions"]?.endDate
                 : new Date().getFullYear().toString() +
                   "-" +
-                  new Date().getMonth() +
-                  1 +
+                  (new Date().getMonth() + 1) +
                   "-" +
                   new Date().getDate(),
-              // dataSetUuid: "913b84ad-f8fb-4df0-ba65-7c8991db8597",
-              dataSetUuid: "fc9ea06c-f3ef-405f-a47f-7c8b65af5631",
-              
+
+              dataSetUuid: "2bcc8d25-618e-4486-b7ad-30420def1464",
             };
             $scope.dataRows = [];
             $scope.maxRejectionReasons = 1;
@@ -170,11 +171,9 @@
               const responseRows = response?.rows;
               $scope.dataRows = responseRows?.map((row, index) => {
                 return {
-                    ...row
-                }
-              })
-              
-
+                  ...row,
+                };
+              });
               $scope.loading = false;
               $scope.$apply();
             });
@@ -184,25 +183,35 @@
   </head>
   <body>
     <div id="report-app" ng-app="reportModule" ng-controller="reportController">
-      <h3 class="text-center">ORODHA YA WAGONJWA WALIORUHUSIWA</h3>
+      <h3 class="text-center">Billing</h3>
       <div style="width: 100%; overflow: auto; margin-top: 16px">
         <table class="table table-bordered" ng-if="!loading">
           <thead style="background-color: #2e8180; color: #fff">
             <tr>
-              <th>NA</th>
-              <th>JINA LA MGONJWA</th>
-              <th>TAREHE YA KURUHUSIWA</th>
-              <th>JINSIA YA MGONJWA</th>
-              <th>WODI</th>
+              <!-- <th>No</th> -->
+              <th>CASH PATIENT</th>
+              <th>INSURANCE PATIENT</th>
+              <th>TOTAL INVOICE</th>
+              <th>CASH PAYMENT</th>
+              <th>INSURANCE PAYMENT</th>
+              <th>TOTAL PAYMENTS</th>
+              <th>UNPAID CASH PAYMENT</th>
+              <th>UNPAID INSURANCE PAYMENT</th>
+              <th>UNPAID TOTAL</th>
             </tr>
           </thead>
           <tbody>
             <tr ng-repeat="dataRow in dataRows;">
-              <td>{{dataRow.NA}}</td>
-              <td>{{dataRow.JINA_LA_MGONJWA}}</td>
-              <td>{{dataRow.TAREHE_YA_KURUHUSIWA}}</td>
-              <td>{{dataRow.JINSIA_YA_MGONJWA}}</td>
-              <td>{{dataRow.WODI}}</td>
+              <!-- <td>{{dataRow.#}}</td> -->
+              <td>{{dataRow.cashpatients}}</td>
+              <td>{{dataRow.Insurancepatients}}</td>
+              <td>{{dataRow.total_invoice_count}}</td>
+              <td>{{dataRow.cashpayments}}</td>
+              <td>{{dataRow.insurancepayments}}</td>
+              <td>{{dataRow.Totalpayments}}</td>
+              <td>{{dataRow.unpaidcashpatients}}</td>
+              <td>{{dataRow.unpaidinsurancepatients}}</td>
+              <td>{{dataRow.unpaidtotals}}</td>
             </tr>
           </tbody>
         </table>
