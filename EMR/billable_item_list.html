@@ -162,7 +162,7 @@
                   "-" +
                   new Date().getDate(),
 
-              dataSetUuid: "51a8b7e7-73b1-4c89-9bbc-d6c468eec116",
+              dataSetUuid: "7c052816-b673-454c-a54b-e79fd51ada66",
             };
             $scope.dataRows = [];
             $scope.maxRejectionReasons = 1;
@@ -183,21 +183,23 @@
   </head>
   <body>
     <div id="report-app" ng-app="reportModule" ng-controller="reportController">
-      <h3 class="text-center">Pharmacy Report</h3>
+      <h3 class="text-center">Billable Item List Report</h3>
       <div style="width: 100%; overflow: auto; margin-top: 16px">
         <table class="table table-bordered" ng-if="!loading">
           <thead style="background-color: #2e8180; color: #fff">
             <tr>
               <th>S/NO</th>
-              <th>TOTAL PHARMACY VISIT</th>
-            
-              
+              <th>NAME</th>
+              <th>TYPE</th>
+              <th>PRICES</th>
             </tr>
           </thead>
           <tbody>
             <tr ng-repeat="dataRow in dataRows;">
               <td>{{$index+1}}</td>
-              <td>{{dataRow.visited_pharmacy_total}}</td>
+              <td>{{dataRow.name}}</td>
+              <td>{{dataRow.type}}</td>
+              <td>{{dataRow.prices}}</td>
         
             </tr>
           </tbody>
