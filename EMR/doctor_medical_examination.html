@@ -162,7 +162,7 @@
                   "-" +
                   new Date().getDate(),
 
-              dataSetUuid: "2bcc8d25-618e-4486-b7ad-30420def1464",
+              dataSetUuid: "97bbbf09-8026-4f32-8033-5ef0b32573ef",
             };
             $scope.dataRows = [];
             $scope.maxRejectionReasons = 1;
@@ -183,38 +183,19 @@
   </head>
   <body>
     <div id="report-app" ng-app="reportModule" ng-controller="reportController">
-      <h3 class="text-center">Billing</h3>
+      <h3 class="text-center">Medical examinations Report</h3>
       <div style="width: 100%; overflow: auto; margin-top: 16px">
         <table class="table table-bordered" ng-if="!loading">
           <thead style="background-color: #2e8180; color: #fff">
             <tr>
-              <!-- <th>No</th> -->
               <th>S/NO</th>
-              <th>CASH PATIENT</th>
-              <th>INSURANCE PATIENT</th>
-              <th>TOTAL INVOICE</th>
-              <th>CASH PAYMENT</th>
-              <th>INSURANCE PAYMENT</th>
-              <th>TOTAL PAYMENTS</th>
-              <th>UNPAID CASH PAYMENT</th>
-              <th>UNPAID INSURANCE PAYMENT</th>
-              <th>UNPAID TOTAL</th>
+              <th>Patient's name</th>
             </tr>
           </thead>
           <tbody>
             <tr ng-repeat="dataRow in dataRows;">
-              <!-- <td>{{dataRow.#}}</td> -->
-             
               <td>{{$index+1}}</td>
-              <td>{{dataRow.cashpatients}}</td>
-              <td>{{dataRow.Insurancepatients}}</td>
-              <td>{{dataRow.total_invoice_count}}</td>
-              <td>{{dataRow.cashpayments}}</td>
-              <td>{{dataRow.insurancepayments}}</td>
-              <td>{{dataRow.Totalpayments}}</td>
-              <td>{{dataRow.unpaidcashpatients}}</td>
-              <td>{{dataRow.unpaidinsurancepatients}}</td>
-              <td>{{dataRow.unpaidtotals}}</td>
+              <td>{{dataRow.JINA_LA_MGONJWA}}</td>
             </tr>
           </tbody>
         </table>
