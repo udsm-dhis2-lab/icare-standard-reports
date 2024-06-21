@@ -163,6 +163,7 @@
                   new Date().getDate(),
 
               dataSetUuid: "7c052816-b673-454c-a54b-e79fd51ada66",
+              // dataSetUuid: "718fa52e-3de0-4bcb-8c44-9957ac2a8170",
             };
             $scope.dataRows = [];
             $scope.maxRejectionReasons = 1;
@@ -191,16 +192,17 @@
               <th>S/NO</th>
               <th>NAME</th>
               <th>TYPE</th>
-              <th>PRICES</th>
+              <th>CASH PRICES</th>
+              <th>NHIF PRICES</th>
             </tr>
           </thead>
           <tbody>
             <tr ng-repeat="dataRow in dataRows;">
               <td>{{$index+1}}</td>
               <td>{{dataRow.name}}</td>
-              <td>{{dataRow.type}}</td>
-              <td>{{dataRow.prices}}</td>
-        
+              <td>{{dataRow.Type}}</td>
+              <td>{{dataRow.Cash_prices}}</td>
+              <td>{{dataRow.Nhif_prices}}</td>
             </tr>
           </tbody>
         </table>
